@@ -37,7 +37,7 @@ class Program
     {
         try
         {
-            if (command.Contains("-")) // Plage (ex: 1-3)
+            if (command.Contains("-")) 
             {
                 var range = command.Split('-');
                 int start = int.Parse(range[0]);
@@ -48,7 +48,7 @@ class Program
                     ExecuteBackup(i);
                 }
             }
-            else if (command.Contains(";")) // Liste (ex: 1;3)
+            else if (command.Contains(";")) 
             {
                 var jobs = command.Split(';');
                 foreach (var job in jobs)
@@ -56,7 +56,7 @@ class Program
                     ExecuteBackup(int.Parse(job));
                 }
             }
-            else // Single job
+            else 
             {
                 ExecuteBackup(int.Parse(command));
             }
