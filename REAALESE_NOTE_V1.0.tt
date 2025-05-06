@@ -1,0 +1,75 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".txt" #>
+
+
+
+EasySave Backup Utility - Release Notes v1.0
+Release Date: [06-05-2025]
+
+Overview
+EasySave V1.0 is a lightweight, multilingual backup tool designed for simple file/folder synchronization across local, external, and network drives.
+
+New Features
+1. Backup Job Management
+✅ Create up to 5 backup jobs
+✅ Flexible backup types:
+
+Full Backup: Complete copy of all files
+
+Differential Backup: Only copies changed files since last backup
+✅ Path support:
+
+Local drives (C:\)
+
+External drives (D:\)
+
+Network paths (\\NAS\backups)
+
+2. Multilingual Support
+🌍 Available languages:
+
+English (Default)
+
+French (Français)
+
+3. Execution Modes
+⚡ Manual execution via interactive menu
+⚡ Automated execution via command line:
+
+Single job: 1
+
+Range: 1-3 (jobs 1 through 3)
+
+Selection: 1;3 (jobs 1 and 3)
+
+Technical Specifications
+Component	Details
+Platform	.NET Core Console Application
+Data Storage	JSON-based backup job configuration
+Backup Logic	File-level copy with timestamp comparison
+Error Handling	Console logging with user-friendly messages
+How to Upgrade
+Replace previous executable with the new version
+
+Existing backup jobs (backupJobs.json) will remain compatible
+
+Known Limitations
+⚠ Maximum 5 backup jobs
+⚠ No compression/encryption support (planned for V2)
+⚠ No scheduling (use Windows Task Scheduler externally)
+
+Getting Started
+Run EasySave.exe
+
+Follow the menu to create your first backup job
+
+Execute via UI or command line
+
+Sample Command:
+
+bash
+EasySave.exe 1-3  # Runs backup jobs 1 through 3
