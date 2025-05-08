@@ -19,7 +19,7 @@
           <mxGeometry y="138" width="160" height="14" as="geometry" />
         </mxCell>
         <mxCell id="zkfFHV4jXpPFQw0GAbJ--6" value="LanguageService" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="100" y="310" width="160" height="135" as="geometry">
+          <mxGeometry x="100" y="300" width="160" height="135" as="geometry">
             <mxRectangle x="130" y="380" width="160" height="26" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
@@ -105,7 +105,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="xQvrJUGwMB8z0_V_hs6T-18" value="LogEntry" style="swimlane;fontStyle=2;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=20;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="-280" y="310" width="160" height="180" as="geometry">
+          <mxGeometry x="-400" y="120" width="160" height="180" as="geometry">
             <mxRectangle x="220" y="120" width="160" height="26" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
@@ -114,6 +114,17 @@
         </mxCell>
         <mxCell id="xQvrJUGwMB8z0_V_hs6T-20" value="" style="line;html=1;strokeWidth=1;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="xQvrJUGwMB8z0_V_hs6T-18">
           <mxGeometry y="150" width="160" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="xQvrJUGwMB8z0_V_hs6T-22" value="BackupState" style="swimlane;fontStyle=2;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=20;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-180" y="120" width="160" height="198" as="geometry">
+            <mxRectangle x="220" y="120" width="160" height="26" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="xQvrJUGwMB8z0_V_hs6T-23" value=" - BackupName&#xa;- LastActionTimestamp&#xa;- Status&#xa;- TotalFiles&#xa;- TotalSizeBytes&#xa;- FilesProcessed&#xa;- FilesRemaining&#xa;- SizeRemainingBytes&#xa;- CurrentSourceFile&#xa;- CurrentDestFile" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="xQvrJUGwMB8z0_V_hs6T-22">
+          <mxGeometry y="20" width="160" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="xQvrJUGwMB8z0_V_hs6T-24" value="" style="line;html=1;strokeWidth=1;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="xQvrJUGwMB8z0_V_hs6T-22">
+          <mxGeometry y="190" width="160" height="8" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
