@@ -1,87 +1,243 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- En-têtes requis -->
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-    <xsd:element name="root" msdata:IsDataSet="true">
-      <xsd:complexType>
-        <xsd:choice maxOccurs="unbounded">
-          <xsd:element name="metadata">
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+        <xsd:element name="root" msdata:IsDataSet="true">
             <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" />
-              </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
+                <xsd:choice maxOccurs="unbounded">
+                    <xsd:element name="metadata">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" use="required" type="xsd:string" />
+                            <xsd:attribute name="type" type="xsd:string" />
+                            <xsd:attribute name="mimetype" type="xsd:string" />
+                            <xsd:attribute ref="xml:space" />
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="assembly">
+                        <xsd:complexType>
+                            <xsd:attribute name="alias" type="xsd:string" />
+                            <xsd:attribute name="name" type="xsd:string" />
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="data">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+                            <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+                            <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+                            <xsd:attribute ref="xml:space" />
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="resheader">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                            </xsd:sequence>
+                            <xsd:attribute name="name" type="xsd:string" use="required" />
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:choice>
             </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="assembly">
-            <xsd:complexType>
-              <xsd:attribute name="alias" type="xsd:string" />
-              <xsd:attribute name="name" type="xsd:string" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="data">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
-              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
-              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="resheader">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" />
-            </xsd:complexType>
-          </xsd:element>
-        </xsd:choice>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:schema>
-  
-  <!-- En-têtes requis -->
-  <resheader name="resmimetype">
-    <value>text/microsoft-resx</value>
-  </resheader>
-  <resheader name="version">
-    <value>2.0</value>
-  </resheader>
-  <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
+        </xsd:element>
+    </xsd:schema>
 
-  <!-- Vos chaînes de traduction -->
-  <data name="WelcomeMessage" xml:space="preserve">
-    <value>Backup Application - Version 1.0</value>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>2.0</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+
+    <!-- Menu Items -->
+    <data name="MainMenuTitle" xml:space="preserve">
+    <value>Main Menu</value>
   </data>
-  <data name="StartingBackup" xml:space="preserve">
-    <value>Starting backup: </value>
+    <data name="CreateBackupJob" xml:space="preserve">
+    <value>Create Backup Job</value>
   </data>
-  <data name="BackupComplete" xml:space="preserve">
-    <value>Backup completed: </value>
+    <data name="EditBackupJob" xml:space="preserve">
+    <value>Edit Backup Job</value>
   </data>
-  <data name="SourceNotFound" xml:space="preserve">
-    <value>Source directory does not exist.</value>
+    <data name="DeleteBackupJob" xml:space="preserve">
+    <value>Delete Backup Job</value>
   </data>
-  <data name="BackupError" xml:space="preserve">
-    <value>Backup error: </value>
+    <data name="ListBackupJobs" xml:space="preserve">
+    <value>List Backup Jobs</value>
   </data>
-  <data name="CommandError" xml:space="preserve">
-    <value>Command error: </value>
+    <data name="ExecuteBackupJob" xml:space="preserve">
+    <value>Execute Backup Job</value>
   </data>
-  <data name="JobNotFound" xml:space="preserve">
-    <value>Backup job not found: </value>
+    <data name="ExecuteAllBackupJobs" xml:space="preserve">
+    <value>Execute All Backup Jobs</value>
+  </data>
+    <data name="ChangeLanguage" xml:space="preserve">
+    <value>Change Language</value>
+  </data>
+    <data name="Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+    <data name="ExecuteBackupOptions" xml:space="preserve">
+    <value>Execute Backup Options</value>
+</data>
+    <data name="ExecuteFormatHint" xml:space="preserve">
+    <value>Enter job ID(s) in format: 1 OR 1-3 OR 2,3</value>
+</data>
+    <data name="EnterJobSelection" xml:space="preserve">
+    <value>Enter job ID or range</value>
+</data>
+    <data name="Current" xml:space="preserve">
+    <value>Current</value>
+</data>
+    <data name="LanguageSaved" xml:space="preserve">
+    <value>Language preference saved</value>
+</data>
+
+    <!-- Common Strings -->
+    <data name="ChooseOption" xml:space="preserve">
+    <value>Choose an option</value>
+  </data>
+    <data name="InvalidOption" xml:space="preserve">
+    <value>Invalid option, please try again</value>
+  </data>
+
+    <!-- Backup Job Management -->
+    <data name="CreateBackupJobTitle" xml:space="preserve">
+    <value>Create New Backup Job</value>
+  </data>
+    <data name="MaxJobsReached" xml:space="preserve">
+    <value>Maximum number of backup jobs (5) reached</value>
+  </data>
+    <data name="EnterJobName" xml:space="preserve">
+    <value>Enter job name</value>
+  </data>
+    <data name="EnterSourcePath" xml:space="preserve">
+    <value>Enter source path</value>
+  </data>
+    <data name="EnterTargetPath" xml:space="preserve">
+    <value>Enter target path</value>
+  </data>
+    <data name="FullBackup" xml:space="preserve">
+    <value>Full Backup</value>
+  </data>
+    <data name="DifferentialBackup" xml:space="preserve">
+    <value>Differential Backup</value>
+  </data>
+    <data name="ChooseBackupType" xml:space="preserve">
+    <value>Choose backup type</value>
+  </data>
+    <data name="JobCreatedSuccess" xml:space="preserve">
+    <value>Backup job created successfully</value>
+  </data>
+
+    <!-- Edit/Delete Dialogs -->
+    <data name="EditBackupJobTitle" xml:space="preserve">
+    <value>Edit Backup Job</value>
+  </data>
+    <data name="EnterJobIdToEdit" xml:space="preserve">
+    <value>Enter job ID to edit</value>
+  </data>
+    <data name="InvalidJobId" xml:space="preserve">
+    <value>Invalid job ID</value>
+  </data>
+    <data name="JobNotFound" xml:space="preserve">
+    <value>Job not found:</value>
+  </data>
+    <data name="CurrentBackupType" xml:space="preserve">
+    <value>Current backup type</value>
+  </data>
+    <data name="JobUpdatedSuccess" xml:space="preserve">
+    <value>Job updated successfully</value>
+  </data>
+    <data name="DeleteBackupJobTitle" xml:space="preserve">
+    <value>Delete Backup Job</value>
+  </data>
+    <data name="EnterJobIdToDelete" xml:space="preserve">
+    <value>Enter job ID to delete</value>
+  </data>
+    <data name="JobDeletedSuccess" xml:space="preserve">
+    <value>Job deleted successfully</value>
+  </data>
+
+    <!-- Listing -->
+    <data name="BackupJobsListTitle" xml:space="preserve">
+    <value>Backup Jobs List</value>
+  </data>
+    <data name="NoJobsFound" xml:space="preserve">
+    <value>No backup jobs found</value>
+  </data>
+    <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+    <data name="Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+    <data name="Target" xml:space="preserve">
+    <value>Target</value>
+  </data>
+    <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+
+    <!-- Execution -->
+    <data name="ExecuteSingleBackupTitle" xml:space="preserve">
+    <value>Execute Single Backup</value>
+  </data>
+    <data name="EnterJobIdToExecute" xml:space="preserve">
+    <value>Enter job ID to execute</value>
+  </data>
+    <data name="ExecutingAllBackups" xml:space="preserve">
+    <value>Executing All Backup Jobs</value>
+  </data>
+
+    <!-- Language -->
+    <data name="ChangeLanguageTitle" xml:space="preserve">
+    <value>Change Application Language</value>
+  </data>
+    <data name="English" xml:space="preserve">
+    <value>English</value>
+  </data>
+    <data name="French" xml:space="preserve">
+    <value>French</value>
+  </data>
+    <data name="ChooseLanguage" xml:space="preserve">
+    <value>Choose language</value>
+  </data>
+    <data name="LanguageChanged" xml:space="preserve">
+    <value>Language changed successfully</value>
+  </data>
+
+    <!-- Backup Operations -->
+    <data name="StartingBackup" xml:space="preserve">
+    <value>Starting backup:</value>
+  </data>
+    <data name="SourceNotFound" xml:space="preserve">
+    <value>Error: Source path not found</value>
+  </data>
+    <data name="BackupComplete" xml:space="preserve">
+    <value>Backup completed:</value>
+  </data>
+    <data name="BackupError" xml:space="preserve">
+    <value>Backup error:</value>
+  </data>
+    <data name="CopyingFile" xml:space="preserve">
+    <value>Copying file</value>
+  </data>
+    <data name="CopyError" xml:space="preserve">
+    <value>Error copying file</value>
+  </data>
+    <data name="CreatingFolder" xml:space="preserve">
+    <value>Creating folder</value>
   </data>
 </root>

@@ -21,62 +21,196 @@ namespace BackupApp.Services
 
         public void PerformBackup(BackupJob job)
         {
+            if (job == null)
+            {
+                string nullError = _languageService.GetString("JobNullError");
+                Console.WriteLine(nullError);
+                _logger.LogError("System", nullError);
+                return;
+            }
+
             var state = new BackupState
             {
                 BackupName = job.Name,
                 Status = "Active",
-                LastActionTimestamp = DateTime.Now
+                LastActionTimestamp = DateTime.Now,
+                CurrentSourceFile = string.Empty,
+                CurrentDestFile = string.Empty
             };
 
             try
             {
-                Console.WriteLine(_languageService.GetString("StartingBackup") + job.Name);
+                // Log backup start
+                Console.WriteLine($"{_languageService.GetString("StartingBackup")} {job.Name} ({job.Type})");
                 _logger.LogFileTransfer(job.Name, job.SourcePath, job.TargetPath, 0, 0, true);
 
-                // Check paths
+                // Validate paths
                 if (!Directory.Exists(job.SourcePath))
                 {
-                    string error = _languageService.GetString("SourceNotFound");
+                    string error = $"{_languageService.GetString("SourceNotFound")}: {job.SourcePath}";
                     Console.WriteLine(error);
                     _logger.LogError(job.Name, error);
+                    state.Status = "Error";
+                    _stateManager.UpdateState(job.Name, state);
                     return;
                 }
 
+                // Ensure target directory exists
                 if (!Directory.Exists(job.TargetPath))
                 {
-                    Directory.CreateDirectory(job.TargetPath);
-                    _logger.LogDirectoryCreation(job.Name, job.TargetPath);
+                    try
+                    {
+                        Directory.CreateDirectory(job.TargetPath);
+                        _logger.LogDirectoryCreation(job.Name, job.TargetPath);
+                        Console.WriteLine($"{_languageService.GetString("CreatedDirectory")}: {job.TargetPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        string error = $"{_languageService.GetString("DirCreateError")}: {job.TargetPath} - {ex.Message}";
+                        Console.WriteLine(error);
+                        _logger.LogError(job.Name, error);
+                        state.Status = "Error";
+                        _stateManager.UpdateState(job.Name, state);
+                        return;
+                    }
                 }
 
-                // Initialize state
+                // Get files and update state
                 var allFiles = Directory.GetFiles(job.SourcePath, "*", SearchOption.AllDirectories);
                 state.TotalFiles = allFiles.Length;
                 state.TotalSizeBytes = CalculateTotalSize(allFiles);
+                state.FilesRemaining = state.TotalFiles;
+                state.SizeRemainingBytes = state.TotalSizeBytes;
                 _stateManager.UpdateState(job.Name, state);
 
-                // Copy files
-                CopyDirectory(job, state, job.SourcePath, job.TargetPath, job.Type == BackupType.Differential);
+                // Execute backup based on type
+                var stopwatch = Stopwatch.StartNew();
+                if (job.Type == BackupType.Full)
+                {
+                    ExecuteFullBackup(job, state, allFiles);
+                }
+                else
+                {
+                    ExecuteDifferentialBackup(job, state, allFiles);
+                }
+                stopwatch.Stop();
 
-                // Update last run time and state
+                // Finalize backup
                 job.LastRun = DateTime.Now;
                 state.Status = "Completed";
                 state.LastActionTimestamp = DateTime.Now;
+                
                 _stateManager.UpdateState(job.Name, state);
 
-                Console.WriteLine(_languageService.GetString("BackupComplete") + job.Name);
+                Console.WriteLine($"{_languageService.GetString("BackupComplete")} {job.Name}");
+                Console.WriteLine($"{_languageService.GetString("BackupStats")} {state.TotalFiles} files, {FormatSize(state.TotalSizeBytes)}, {stopwatch.Elapsed.TotalSeconds:0.00}s");
             }
             catch (Exception ex)
             {
                 state.Status = "Error";
                 _stateManager.UpdateState(job.Name, state);
 
-                string error = _languageService.GetString("BackupError") + ex.Message;
+                string error = $"{_languageService.GetString("BackupError")} {job.Name}: {ex.Message}";
                 Console.WriteLine(error);
                 _logger.LogError(job.Name, error);
             }
-
-
         }
+        private void ExecuteFullBackup(BackupJob job, BackupState state, string[] allFiles)
+        {
+            foreach (var file in allFiles)
+            {
+                try
+                {
+                    string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+                    UpdateCurrentFileState(job, state, file, destFile);
+
+                    var fileStopwatch = Stopwatch.StartNew();
+                    File.Copy(file, destFile, true);
+                    fileStopwatch.Stop();
+
+                    long fileSize = new FileInfo(file).Length;
+                    _logger.LogFileTransfer(job.Name, file, destFile, fileSize, fileStopwatch.ElapsedMilliseconds, true);
+                    UpdateProgressState(job, state, fileSize);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(job.Name, $"{_languageService.GetString("FileCopyError")} {file}: {ex.Message}");
+                }
+            }
+        }
+
+        private void ExecuteDifferentialBackup(BackupJob job, BackupState state, string[] allFiles)
+        {
+            DateTime? lastBackupTime = GetLastBackupTime(job.TargetPath);
+
+            foreach (var file in allFiles)
+            {
+                string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+                UpdateCurrentFileState(job, state, file, destFile);
+
+                if (ShouldSkipFile(file, destFile, lastBackupTime))
+                {
+                    state.FilesProcessed++;
+                    state.FilesRemaining--;
+                    continue;
+                }
+
+                try
+                {
+                    var fileStopwatch = Stopwatch.StartNew();
+                    File.Copy(file, destFile, true);
+                    fileStopwatch.Stop();
+
+                    long fileSize = new FileInfo(file).Length;
+                    _logger.LogFileTransfer(job.Name, file, destFile, fileSize, fileStopwatch.ElapsedMilliseconds, true);
+                    UpdateProgressState(job, state, fileSize);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(job.Name, $"{_languageService.GetString("FileCopyError")} {file}: {ex.Message}");
+                }
+            }
+        }
+
+        private void UpdateCurrentFileState(BackupJob job, BackupState state, string sourceFile, string destFile)
+        {
+            state.CurrentSourceFile = sourceFile;
+            state.CurrentDestFile = destFile;
+            state.LastActionTimestamp = DateTime.Now;
+            _stateManager.UpdateState(job.Name, state);
+        }
+
+        private void UpdateProgressState(BackupJob job, BackupState state, long fileSize)
+        {
+            state.FilesProcessed++;
+            state.FilesRemaining--;
+            state.SizeRemainingBytes -= fileSize;
+            _stateManager.UpdateState(job.Name, state);
+        }
+
+        private bool ShouldSkipFile(string sourceFile, string destFile, DateTime? lastBackupTime)
+        {
+            if (!File.Exists(destFile)) return false;
+
+            FileInfo sourceInfo = new FileInfo(sourceFile);
+            FileInfo destInfo = new FileInfo(destFile);
+
+            return sourceInfo.LastWriteTime <= destInfo.LastWriteTime &&
+                  (!lastBackupTime.HasValue || destInfo.LastWriteTime >= lastBackupTime);
+        }
+
+        private string FormatSize(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            int order = 0;
+            while (bytes >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                bytes /= 1024;
+            }
+            return $"{bytes:0.##} {sizes[order]}";
+        }
+
         private void CopyDirectory(BackupJob job, BackupState state, string sourceDir, string targetDir, bool differential)
         {
             var files = Directory.GetFiles(sourceDir);

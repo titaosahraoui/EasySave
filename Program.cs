@@ -27,38 +27,41 @@ class Program
     {
         _repository = new BackupRepository();
         _backupService = new BackupService();
-        _languageService = new LanguageService();
-
-        // Définir la langue par défaut
-        _languageService.SetLanguage("fr");
+        _languageService = new LanguageService(); // this will auto load config
     }
 
     private static void ProcessCommandLine(string command)
     {
         try
         {
-            if (command.Contains("-")) 
+            if (command.Contains("-")) // Range (1-3)
             {
                 var range = command.Split('-');
-                int start = int.Parse(range[0]);
-                int end = int.Parse(range[1]);
-
-                for (int i = start; i <= end; i++)
+                if (range.Length == 2 && int.TryParse(range[0], out int start) && int.TryParse(range[1], out int end))
                 {
-                    ExecuteBackup(i);
+                    for (int i = start; i <= end; i++)
+                    {
+                        ExecuteBackup(i);
+                    }
                 }
             }
-            else if (command.Contains(";")) 
+            else if (command.Contains(",")) // List (2,3)
             {
-                var jobs = command.Split(';');
+                var jobs = command.Split(',');
                 foreach (var job in jobs)
                 {
-                    ExecuteBackup(int.Parse(job));
+                    if (int.TryParse(job, out int jobId))
+                    {
+                        ExecuteBackup(jobId);
+                    }
                 }
             }
-            else 
+            else // Single job
             {
-                ExecuteBackup(int.Parse(command));
+                if (int.TryParse(command, out int jobId))
+                {
+                    ExecuteBackup(jobId);
+                }
             }
         }
         catch (Exception ex)
@@ -72,6 +75,7 @@ class Program
         var job = _repository.GetBackupJob(jobId);
         if (job != null)
         {
+            Console.WriteLine($"\n{_languageService.GetString("StartingBackup")} {job.Name} (ID: {jobId})");
             _backupService.PerformBackup(job);
         }
         else
@@ -80,13 +84,46 @@ class Program
         }
     }
 
+    public static void DisplayLogo()
+    {
+        Console.Clear();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+
+        string[] logo = {
+        @" /$$$$$$$$                                /$$$$$$$",
+        @"| $$_____/                               /$$__  $$",
+        @"| $$        /$$$$$$   /$$$$$$$ /$$   /$$| $$  \__/  /$$$$$$  /$$    /$$ /$$$$$$",
+        @"| $$$$$    |____  $$ /$$_____/| $$  | $$|  $$$$$$  |____  $$|  $$  /$$//$$__  $$",
+        @"| $$__/     /$$$$$$$|  $$$$$$ | $$  | $$ \____  $$  /$$$$$$$ \  $$/$$/| $$$$$$$$",
+        @"| $$       /$$__  $$ \____  $$| $$  | $$ /$$  \ $$ /$$__  $$  \  $$$/ | $$_____/",
+        @"| $$$$$$$$|  $$$$$$$ /$$$$$$$/|  $$$$$$$|  $$$$$$/|  $$$$$$$   \  $/  |  $$$$$$$",
+        @"|________/ \_______/|_______/  \____  $$ \______/  \_______/    \_/    \_______/",
+        @"                               /$$  | $$",
+        @"                              |  $$$$$$/",
+        @"                               \______/"
+    };
+
+        Console.Clear();
+        foreach (string line in logo)
+        {
+            Console.WriteLine(line);
+        }
+
+        Console.ResetColor();
+        Console.WriteLine("\n           Backup Manager v1.0");
+        Console.WriteLine("   ──────────────────────────────");
+        Thread.Sleep(1000);
+    }
+
     private static void ShowMainMenu()
     {
         bool exit = false;
 
         while (!exit)
         {
+        
             Console.Clear();
+            DisplayLogo();
             Console.WriteLine("====================================");
             Console.WriteLine(_languageService.GetString("MainMenuTitle"));
             Console.WriteLine("====================================");
@@ -279,18 +316,19 @@ class Program
     private static void ExecuteSingleBackup()
     {
         Console.Clear();
-        Console.WriteLine(_languageService.GetString("ExecuteSingleBackupTitle"));
+        Console.WriteLine(_languageService.GetString("ExecuteBackupOptions"));
+        Console.WriteLine(_languageService.GetString("ExecuteFormatHint"));
         ListBackupJobs(false);
 
-        Console.Write(_languageService.GetString("EnterJobIdToExecute") + ": ");
-        if (!int.TryParse(Console.ReadLine(), out int id) || id < 1 || id > 5)
+        Console.Write(_languageService.GetString("EnterJobSelection") + ": ");
+        var input = Console.ReadLine();
+
+        if (!string.IsNullOrWhiteSpace(input))
         {
-            Console.WriteLine(_languageService.GetString("InvalidJobId"));
-            Console.ReadKey();
-            return;
+            ProcessCommandLine(input);
         }
 
-        ExecuteBackup(id);
+        Console.WriteLine(_languageService.GetString("PressAnyKeyToContinue"));
         Console.ReadKey();
     }
 
@@ -319,7 +357,7 @@ class Program
     {
         Console.Clear();
         Console.WriteLine(_languageService.GetString("ChangeLanguageTitle"));
-        Console.WriteLine($"1. {_languageService.GetString("English")}");
+        Console.WriteLine($"1. {_languageService.GetString("English")} ({_languageService.GetString("Current")})");
         Console.WriteLine($"2. {_languageService.GetString("French")}");
         Console.Write(_languageService.GetString("ChooseLanguage") + ": ");
 
