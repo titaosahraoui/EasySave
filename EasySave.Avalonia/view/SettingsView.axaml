@@ -1,0 +1,19 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui">
+    <StackPanel Margin="20" Spacing="15">
+        <TextBlock Text="Activity Logs" FontSize="20"/>
+
+        <TextBox AcceptsReturn="True" IsReadOnly="True" Height="300"
+                 Text="2023-11-15 09:30: Documents Backup started
+2023-11-15 09:32: Copied 42 files (1.2GB)
+2023-11-15 09:35: Backup completed successfully
+----------------------------------------
+2023-11-14 14:15: Photos Backup started
+2023-11-14 14:20: Error copying photo123.jpg
+2023-11-14 14:21: Backup completed with errors"/>
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button Content="Refresh"/>
+            <Button Content="Export"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

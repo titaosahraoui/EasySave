@@ -1,0 +1,74 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EasySave.Avalonia.Views.MainWindow"
+        Title="EasySave 2.0"
+        MinWidth="800"
+        MinHeight="600"
+        TransparencyLevelHint="None">
+
+	<Window.Styles>
+		<Style Selector="Window">
+			<Setter Property="Background" Value="#2D2D30" />
+			<Setter Property="Foreground" Value="#F1F1F1" />
+		</Style>
+
+		<!-- Simple button style -->
+		<Style Selector="Button">
+			<Setter Property="Background" Value="#3E3E40" />
+			<Setter Property="Foreground" Value="White" />
+			<Setter Property="Margin" Value="0,5" />
+			<Setter Property="Padding" Value="10,5" />
+		</Style>
+	</Window.Styles>
+
+	<DockPanel>
+		<!-- Header -->
+		<Border DockPanel.Dock="Top"
+                Background="#252526"
+                Height="50">
+			<StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+				<TextBlock Text="EasySave 2.0"
+                           FontSize="18"
+                           Margin="10,0,0,0"
+                           VerticalAlignment="Center" />
+			</StackPanel>
+		</Border>
+
+		<!-- Main Content -->
+		<Grid>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="200" />
+				<ColumnDefinition Width="*" />
+			</Grid.ColumnDefinitions>
+
+			<!-- Navigation Sidebar -->
+            <StackPanel DockPanel.Dock="Left" Width="200" Background="#1E1E1E" Spacing="5" Margin="10">
+                <Button Content="📁 Backup Jobs"/>
+                <Button Content="▶️ Run Backups"/>
+                <Button Content="⚙️ Settings"/>
+                <Button Content="📝 Logs"/>
+            </StackPanel>
+
+			<!-- Mock Content Area -->
+			<ContentControl Grid.Column="1" Margin="20">
+				<StackPanel>
+					<TextBlock Text="Welcome to EasySave 2.0"
+                               FontSize="16"
+                               Margin="0,0,0,20"/>
+
+					<!-- Mock Backup Jobs List -->
+					<Border Background="#252526" CornerRadius="5" Padding="10">
+						<StackPanel>
+							<TextBlock Text="Sample Backup Jobs:" FontWeight="Bold"/>
+							<TextBlock Text="1. Documents Backup" Margin="10,5,0,0"/>
+							<TextBlock Text="2. Photos Backup" Margin="10,5,0,0"/>
+							<TextBlock Text="3. Project Files Backup" Margin="10,5,0,0"/>
+						</StackPanel>
+					</Border>
+				</StackPanel>
+			</ContentControl>
+		</Grid>
+	</DockPanel>
+</Window>
