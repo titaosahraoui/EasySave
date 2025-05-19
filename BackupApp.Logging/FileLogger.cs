@@ -9,6 +9,7 @@ namespace BackupApp.Logging
     {
         private readonly string _logDirectory;
         private readonly object _lock = new object();
+        public LogFormat CurrentFormat { get; set; } = LogFormat.Json;
 
         public FileLogger()
         {

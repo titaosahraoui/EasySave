@@ -12,10 +12,10 @@ namespace BackupApp.Services
         private readonly ILogger _logger;
         private readonly IStateManager _stateManager;
 
-        public BackupService()
+        public BackupService(LogFormat logFormat = LogFormat.Json)
         {
             _languageService = new LanguageService();
-            _logger = new FileLogger();
+            _logger = logFormat == LogFormat.Json ? new FileLogger() : new XmlFileLogger();
             _stateManager = new FileStateManager();
         }
 
