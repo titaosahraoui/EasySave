@@ -20,3 +20,26 @@ C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Deb
 C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\refint\BackupApp.Logging.dll
 C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.pdb
 C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\ref\BackupApp.Logging.dll
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.deps.json
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.dll
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.pdb
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfoInputs.cache
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfo.cs
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.csproj.CoreCompileInputs.cache
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.dll
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\refint\BackupApp.Logging.dll
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.pdb
+C:\Users\DELL\Downloads\EasySave-master\BackupApp.Logging\obj\Debug\net8.0\ref\BackupApp.Logging.dll
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.deps.json
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.dll
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.pdb
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfoInputs.cache
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfo.cs
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.csproj.CoreCompileInputs.cache
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.sourcelink.json
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.dll
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\refint\BackupApp.Logging.dll
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.pdb
+C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\ref\BackupApp.Logging.dll
