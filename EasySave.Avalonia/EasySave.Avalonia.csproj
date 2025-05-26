@@ -24,4 +24,13 @@
     <ProjectReference Include="..\BackupApp.Logging\BackupApp.Logging.csproj" />
     <ProjectReference Include="..\EasySave-V1\EasySave-V1.csproj" />
   </ItemGroup>
+
+
+<ItemGroup>
+  <AvaloniaResource Include="**\*.xaml"/>
+  <AvaloniaResource Include="Assets\**"/>
+</ItemGroup>
+
+
+
 </Project>

@@ -99,7 +99,7 @@ namespace BackupApp.Services
                 job.LastRun = DateTime.Now;
                 state.Status = "Completed";
                 state.LastActionTimestamp = DateTime.Now;
-                
+
                 _stateManager.UpdateState(job.Name, state);
 
                 Console.WriteLine($"{_languageService.GetString("BackupComplete")} {job.Name}");
@@ -318,5 +318,5 @@ namespace BackupApp.Services
             return Path.Combine(targetRoot, relativePath);
         }
     }
-  
+
 }

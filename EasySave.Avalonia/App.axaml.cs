@@ -1,24 +1,38 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using EasySave.Avalonia.Views;
+using BackupApp.Avalonia.Views;
+using BackupApp.Controllers;
+using BackupApp.ViewModels;
+using BackupApp.Views;
 
-namespace EasySave.Avalonia;
-
-public partial class App : Application
+namespace BackupApp.Avalonia
 {
-    public override void Initialize()
+    public partial class App : Application
     {
-        AvaloniaXamlLoader.Load(this);
-    }
-
-    public override void OnFrameworkInitializationCompleted()
-    {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        public override void Initialize()
         {
-            desktop.MainWindow = new MainWindow();
+            AvaloniaXamlLoader.Load(this);
         }
 
-        base.OnFrameworkInitializationCompleted();
+        public override void OnFrameworkInitializationCompleted()
+        {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                // Create the main window first
+                var mainWindow = new MainWindow();
+
+                // Initialize the controller with the main window reference
+                var controller = new BackupController();
+
+                // Set the controller as DataContext
+                mainWindow.DataContext = controller;
+
+                // Assign the main window
+                desktop.MainWindow = mainWindow;
+            }
+
+            base.OnFrameworkInitializationCompleted();
+        }
     }
 }

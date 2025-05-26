@@ -8,7 +8,7 @@
         public string? TargetPath { get; set; }
         public BackupType Type { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime? LastRun { get; set; } 
+        public DateTime? LastRun { get; set; }
     }
 
     public enum BackupType

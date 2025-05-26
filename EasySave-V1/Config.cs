@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text.Json;
 
-namespace BackupApp
+namespace EasySave_V1
 {
     public class AppConfig
     {

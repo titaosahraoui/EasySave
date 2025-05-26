@@ -1,74 +1,207 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="EasySave.Avalonia.Views.MainWindow"
-        Title="EasySave 2.0"
-        MinWidth="800"
-        MinHeight="600"
-        TransparencyLevelHint="None">
+        xmlns:viewModels="clr-namespace:BackupApp.ViewModels"
+        xmlns:models1="clr-namespace:BackupApp.Models;assembly=EasySave-V1"
+        xmlns:converters="clr-namespace:BackupApp.Avalonia.Converters"
+        x:Class="BackupApp.Avalonia.MainWindow"
+        x:DataType="viewModels:BackupViewModel"
+        Title="EasySave 2.0" Width="1000" Height="600"
+        FontFamily="Segoe UI, Arial"
+        WindowStartupLocation="CenterScreen">
+
+	<Window.DataContext>
+		<viewModels:BackupViewModel/>
+	</Window.DataContext>
+
+	<Window.Resources>
+		<converters:TypeToColorConverter x:Key="TypeToColorConverter"/>
+		<converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+		<converters:NullableDateTimeToStringConverter x:Key="NullableDateTimeConverter"/>
+	</Window.Resources>
 
 	<Window.Styles>
-		<Style Selector="Window">
-			<Setter Property="Background" Value="#2D2D30" />
-			<Setter Property="Foreground" Value="#F1F1F1" />
+		<Style Selector="TextBlock.header">
+			<Setter Property="FontSize" Value="24"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="Foreground" Value="#2c3e50"/>
+			<Setter Property="Margin" Value="0,0,0,15"/>
 		</Style>
 
-		<!-- Simple button style -->
 		<Style Selector="Button">
-			<Setter Property="Background" Value="#3E3E40" />
-			<Setter Property="Foreground" Value="White" />
-			<Setter Property="Margin" Value="0,5" />
-			<Setter Property="Padding" Value="10,5" />
+			<Setter Property="Padding" Value="10,5"/>
+			<Setter Property="MinWidth" Value="100"/>
+			<Setter Property="Margin" Value="5"/>
+			<Setter Property="Background" Value="#3498db"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+
+		<Style Selector="Button:pointerover">
+			<Setter Property="Background" Value="#2980b9"/>
+		</Style>
+
+		<Style Selector="ListBoxItem:selected">
+			<Setter Property="Background" Value="#ecf0f1"/>
+		</Style>
+
+		<!-- Global TextTrimming style -->
+		<Style Selector="TextBlock.trimmed">
+			<Setter Property="TextTrimming" Value="CharacterEllipsis"/>
 		</Style>
 	</Window.Styles>
 
-	<DockPanel>
+	<DockPanel Margin="15">
 		<!-- Header -->
-		<Border DockPanel.Dock="Top"
-                Background="#252526"
-                Height="50">
-			<StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
-				<TextBlock Text="EasySave 2.0"
-                           FontSize="18"
-                           Margin="10,0,0,0"
-                           VerticalAlignment="Center" />
-			</StackPanel>
+		<StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+			<TextBlock Text="EasySave Backup Manager"
+                       Classes="header"
+                       HorizontalAlignment="Center"/>
+
+			<Separator Background="#bdc3c7" Margin="0,0,0,10"/>
+		</StackPanel>
+
+		<!-- Status Bar -->
+		<Border DockPanel.Dock="Bottom" Background="#ecf0f1" Padding="10">
+			<TextBlock Text="status message"
+                       Foreground="#2c3e50"
+                       TextWrapping="Wrap"/>
 		</Border>
 
 		<!-- Main Content -->
 		<Grid>
 			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="200" />
-				<ColumnDefinition Width="*" />
+				<ColumnDefinition Width="1*"/>
+				<ColumnDefinition Width="10"/>
+				<ColumnDefinition Width="300"/>
 			</Grid.ColumnDefinitions>
 
-			<!-- Navigation Sidebar -->
-            <StackPanel DockPanel.Dock="Left" Width="200" Background="#1E1E1E" Spacing="5" Margin="10">
-                <Button Content="📁 Backup Jobs"/>
-                <Button Content="▶️ Run Backups"/>
-                <Button Content="⚙️ Settings"/>
-                <Button Content="📝 Logs"/>
-            </StackPanel>
-
-			<!-- Mock Content Area -->
-			<ContentControl Grid.Column="1" Margin="20">
+			<!-- Job List -->
+			<Border Grid.Column="0" BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4">
 				<StackPanel>
-					<TextBlock Text="Welcome to EasySave 2.0"
-                               FontSize="16"
-                               Margin="0,0,0,20"/>
+					<TextBlock Text="Backup Jobs"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Margin="10,10,10,5"
+                               Foreground="#2c3e50"/>
 
-					<!-- Mock Backup Jobs List -->
-					<Border Background="#252526" CornerRadius="5" Padding="10">
-						<StackPanel>
-							<TextBlock Text="Sample Backup Jobs:" FontWeight="Bold"/>
-							<TextBlock Text="1. Documents Backup" Margin="10,5,0,0"/>
-							<TextBlock Text="2. Photos Backup" Margin="10,5,0,0"/>
-							<TextBlock Text="3. Project Files Backup" Margin="10,5,0,0"/>
-						</StackPanel>
-					</Border>
+					<ListBox ItemsSource="{Binding Jobs}"
+                             SelectedItem="{Binding SelectedJob}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Height="400">
+						<ListBox.ItemTemplate>
+							<DataTemplate x:DataType="models1:BackupJob">
+								<Grid Margin="5" Width="Auto">
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="150"/>
+										<ColumnDefinition Width="120"/>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="*"/>
+									</Grid.ColumnDefinitions>
+
+									<TextBlock Text="{Binding Name}"
+                                               FontWeight="Bold"
+                                               Foreground="#3498db"
+                                               Grid.Column="0"/>
+
+									<Border Background="{Binding Type, Converter={StaticResource TypeToColorConverter}}"
+                                            CornerRadius="3"
+                                            Padding="3,1"
+                                            HorizontalAlignment="Left"
+                                            Grid.Column="1">
+										<TextBlock Text="{Binding Type}"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"/>
+									</Border>
+
+									<StackPanel Orientation="Horizontal" Grid.Column="2">
+										<TextBlock Text="From: " FontWeight="SemiBold"/>
+										<TextBlock Text="{Binding SourcePath}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Classes="trimmed"/>
+									</StackPanel>
+
+									<StackPanel Orientation="Horizontal" Grid.Column="3">
+										<TextBlock Text="To: " FontWeight="SemiBold"/>
+										<TextBlock Text="{Binding TargetPath}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Classes="trimmed"/>
+									</StackPanel>
+								</Grid>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+
+					<StackPanel Orientation="Horizontal"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,10">
+						<Button Content="Add Job"
+                                Command="{Binding AddJobCommand}"
+                                ToolTip.Tip="Create a new backup job"/>
+
+						<Button Content="Run Job"
+                                Command="{Binding RunJobCommand}"
+                                ToolTip.Tip="Execute the selected backup job"/>
+
+						<Button Content="Delete Job"
+                                Command="{Binding DeleteJobCommand}"
+                                ToolTip.Tip="Remove the selected backup job"/>
+
+						<Button Content="Refresh"
+                                Command="{Binding LoadJobsCommand}"
+                                ToolTip.Tip="Reload all backup jobs"/>
+					</StackPanel>
 				</StackPanel>
-			</ContentControl>
+			</Border>
+
+			<!-- Job Details -->
+			<Border Grid.Column="2"
+                    BorderBrush="#bdc3c7"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="10">
+				<StackPanel>
+					<TextBlock Text="Job Details"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"
+                               Foreground="#2c3e50"/>
+
+					<Grid IsVisible="{Binding SelectedJob, Converter={StaticResource NullToBoolConverter}}">
+						<StackPanel>
+							<TextBlock Text="Name:" FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.Name}" Margin="0,0,0,10"/>
+
+							<TextBlock Text="Type:" FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.Type}" Margin="0,0,0,10"/>
+
+							<TextBlock Text="Source Path:" FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.SourcePath}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10"/>
+
+							<TextBlock Text="Destination Path:" FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.TargetPath}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10"/>
+
+							<TextBlock Text="Last Run:" FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.LastRun, Converter={StaticResource NullableDateTimeConverter}}"
+                                       Margin="0,0,0,10"/>
+
+							<Button Content="View Logs"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,10"/>
+						</StackPanel>
+					</Grid>
+
+					<TextBlock Text="No job selected"
+                               IsVisible="{Binding SelectedJob, Converter={StaticResource NullToBoolConverter}, ConverterParameter=Inverse}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontStyle="Italic"
+                               Foreground="#7f8c8d"/>
+				</StackPanel>
+			</Border>
 		</Grid>
 	</DockPanel>
 </Window>

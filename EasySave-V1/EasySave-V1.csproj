@@ -13,6 +13,9 @@
     <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="ReactiveUI" Version="20.2.45" />
+    <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>

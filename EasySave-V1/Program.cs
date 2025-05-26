@@ -1,6 +1,4 @@
-﻿using System;
-using System.Globalization;
-using BackupApp.Services;
+﻿using BackupApp.Services;
 using BackupApp.Models;
 using BackupApp.Data;
 
@@ -121,7 +119,7 @@ class Program
 
         while (!exit)
         {
-        
+
             Console.Clear();
             DisplayLogo();
             Console.WriteLine("====================================");
