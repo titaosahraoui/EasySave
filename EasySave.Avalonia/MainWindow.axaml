@@ -90,7 +90,7 @@
                              Height="400">
 						<ListBox.ItemTemplate>
 							<DataTemplate x:DataType="models1:BackupJob">
-								<Grid Margin="5" Width="Auto">
+								<Grid >
 									<Grid.ColumnDefinitions>
 										<ColumnDefinition Width="150"/>
 										<ColumnDefinition Width="120"/>
