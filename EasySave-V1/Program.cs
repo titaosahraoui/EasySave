@@ -124,10 +124,6 @@ class Program
 
         while (!exit)
         {
-<<<<<<< HEAD
-
-=======
->>>>>>> 8ce2fea5a421066591ddeb380423a10f9604cb18
             Console.Clear();
             DisplayLogo();
             Console.WriteLine("====================================");

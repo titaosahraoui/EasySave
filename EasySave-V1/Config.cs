@@ -2,7 +2,7 @@
 using System.Text.Json;
 using BackupApp.Logging;
 
-namespace EasySave_V1
+namespace BackupApp
 {
     public class AppConfig
     {
