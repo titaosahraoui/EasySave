@@ -1,12 +1,15 @@
 ﻿using BackupApp.Services;
 using BackupApp.Models;
 using BackupApp.Data;
+using BackupApp.Logging;
+using BackupApp;
 
 class Program
 {
     private static BackupRepository _repository;
     private static BackupService _backupService;
     private static LanguageService _languageService;
+    private static AppConfig _config;
 
     static void Main(string[] args)
     {
@@ -23,9 +26,10 @@ class Program
 
     private static void InitializeServices()
     {
+        _config = AppConfig.Load();
         _repository = new BackupRepository();
-        _backupService = new BackupService();
-        _languageService = new LanguageService(); // this will auto load config
+        _backupService = new BackupService(_config.DefaultLogFormat);
+        _languageService = new LanguageService();
     }
 
     private static void ProcessCommandLine(string command)
@@ -74,6 +78,7 @@ class Program
         if (job != null)
         {
             Console.WriteLine($"\n{_languageService.GetString("StartingBackup")} {job.Name} (ID: {jobId})");
+            _backupService = new BackupService(_config.DefaultLogFormat);
             _backupService.PerformBackup(job);
         }
         else
@@ -88,18 +93,18 @@ class Program
         Console.ForegroundColor = ConsoleColor.Cyan;
 
         string[] logo = {
-        @" /$$$$$$$$                                /$$$$$$$",
-        @"| $$_____/                               /$$__  $$",
-        @"| $$        /$$$$$$   /$$$$$$$ /$$   /$$| $$  \__/  /$$$$$$  /$$    /$$ /$$$$$$",
-        @"| $$$$$    |____  $$ /$$_____/| $$  | $$|  $$$$$$  |____  $$|  $$  /$$//$$__  $$",
-        @"| $$__/     /$$$$$$$|  $$$$$$ | $$  | $$ \____  $$  /$$$$$$$ \  $$/$$/| $$$$$$$$",
-        @"| $$       /$$__  $$ \____  $$| $$  | $$ /$$  \ $$ /$$__  $$  \  $$$/ | $$_____/",
-        @"| $$$$$$$$|  $$$$$$$ /$$$$$$$/|  $$$$$$$|  $$$$$$/|  $$$$$$$   \  $/  |  $$$$$$$",
-        @"|________/ \_______/|_______/  \____  $$ \______/  \_______/    \_/    \_______/",
-        @"                               /$$  | $$",
-        @"                              |  $$$$$$/",
-        @"                               \______/"
-    };
+            @" /$$$$$$$$                                /$$$$$$$",
+            @"| $$_____/                               /$$__  $$",
+            @"| $$        /$$$$$$   /$$$$$$$ /$$   /$$| $$  \__/  /$$$$$$  /$$    /$$ /$$$$$$",
+            @"| $$$$$    |____  $$ /$$_____/| $$  | $$|  $$$$$$  |____  $$|  $$  /$$//$$__  $$",
+            @"| $$__/     /$$$$$$$|  $$$$$$ | $$  | $$ \____  $$  /$$$$$$$ \  $$/$$/| $$$$$$$$",
+            @"| $$       /$$__  $$ \____  $$| $$  | $$ /$$  \ $$ /$$__  $$  \  $$$/ | $$_____/",
+            @"| $$$$$$$$|  $$$$$$$ /$$$$$$$/|  $$$$$$$|  $$$$$$/|  $$$$$$$   \  $/  |  $$$$$$$",
+            @"|________/ \_______/|_______/  \____  $$ \______/  \_______/    \_/    \_______/",
+            @"                               /$$  | $$",
+            @"                              |  $$$$$$/",
+            @"                               \______/"
+        };
 
         Console.Clear();
         foreach (string line in logo)
@@ -119,7 +124,10 @@ class Program
 
         while (!exit)
         {
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8ce2fea5a421066591ddeb380423a10f9604cb18
             Console.Clear();
             DisplayLogo();
             Console.WriteLine("====================================");
@@ -132,7 +140,8 @@ class Program
             Console.WriteLine($"5. {_languageService.GetString("ExecuteBackupJob")}");
             Console.WriteLine($"6. {_languageService.GetString("ExecuteAllBackupJobs")}");
             Console.WriteLine($"7. {_languageService.GetString("ChangeLanguage")}");
-            Console.WriteLine($"8. {_languageService.GetString("Exit")}");
+            Console.WriteLine($"8. {_languageService.GetString("ChangeLogFormat")}");
+            Console.WriteLine($"9. {_languageService.GetString("Exit")}");
             Console.WriteLine("====================================");
             Console.Write(_languageService.GetString("ChooseOption") + ": ");
 
@@ -162,6 +171,9 @@ class Program
                     ChangeLanguage();
                     break;
                 case "8":
+                    ChangeLogFormat();
+                    break;
+                case "9":
                     exit = true;
                     break;
                 default:
@@ -170,6 +182,35 @@ class Program
                     break;
             }
         }
+    }
+
+    private static void ChangeLogFormat()
+    {
+        Console.Clear();
+        Console.WriteLine(_languageService.GetString("CurrentLogFormat") + ": " +
+                        (_config.DefaultLogFormat == LogFormat.Json ? "JSON" : "XML"));
+        Console.WriteLine($"1. JSON {(_config.DefaultLogFormat == LogFormat.Json ? "(" + _languageService.GetString("Current") + ")" : "")}");
+        Console.WriteLine($"2. XML {(_config.DefaultLogFormat == LogFormat.Xml ? "(" + _languageService.GetString("Current") + ")" : "")}");
+        Console.Write(_languageService.GetString("ChooseOption") + ": ");
+
+        var input = Console.ReadLine();
+        if (input == "1")
+        {
+            _config.DefaultLogFormat = LogFormat.Json;
+            Console.WriteLine(_languageService.GetString("LogFormatChanged") + ": JSON");
+        }
+        else if (input == "2")
+        {
+            _config.DefaultLogFormat = LogFormat.Xml;
+            Console.WriteLine(_languageService.GetString("LogFormatChanged") + ": XML");
+        }
+        else
+        {
+            Console.WriteLine(_languageService.GetString("InvalidOption"));
+        }
+
+        _config.Save();
+        Console.ReadKey();
     }
 
     private static void CreateBackupJob()

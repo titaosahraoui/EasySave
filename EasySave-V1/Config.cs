@@ -1,11 +1,13 @@
 ﻿using System.IO;
 using System.Text.Json;
+using BackupApp.Logging;
 
 namespace EasySave_V1
 {
     public class AppConfig
     {
         public string DefaultLanguage { get; set; } = "en"; // Default to English
+        public LogFormat DefaultLogFormat { get; internal set; }
 
         private static readonly string ConfigPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
