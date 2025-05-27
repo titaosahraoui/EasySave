@@ -1,23 +1,50 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:BackupApp.ViewModels"
+        xmlns:global="clr-namespace:"
         x:Class="BackupApp.Avalonia.Views.AddEditBackupJobWindow"
-        Title="Add/Edit Backup Job" Width="400" Height="300">
-    <StackPanel Margin="10" Spacing="10">
-        <TextBlock Text="Name:"/>
-        <TextBox Text="test"/>
+        x:DataType="global:AddEditBackupJobViewModel"
+        Title="Add Backup"
+        Width="400"
+        Height="350"
+        WindowStartupLocation="CenterOwner">
 
-        <TextBlock Text="Source Path:"/>
-        <TextBox Text="test}"/>
 
-        <TextBlock Text="Target Path:"/>
-        <TextBox Text="test"/>
 
-        <TextBlock Text="Backup Type:"/>
-        <!--<ComboBox Items="backuptype" SelectedIndex="selectindex"/>-->
+    <StackPanel Margin="15" Spacing="10">
+		<TextBlock Text="Name:" FontWeight="Bold"/>
+		<TextBox Text="{Binding CurrentJob.Name}" Watermark="Enter job name"/>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
-            <Button Content="Cancel"  Width="80"/>
-            <Button Content="Save" Width="80"/>
-        </StackPanel>
-    </StackPanel>
+		<TextBlock Text="Source Path:" FontWeight="Bold"/>
+		<Grid>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+			<TextBox Grid.Column="0" Text="{Binding CurrentJob.SourcePath}" Watermark="C:\path\to\source"/>
+			<Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseSourceCommand}" Margin="5,0,0,0"/>
+		</Grid>
+
+		<TextBlock Text="Target Path:" FontWeight="Bold"/>
+		<Grid>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+			<TextBox Grid.Column="0" Text="{Binding CurrentJob.TargetPath}" Watermark="C:\path\to\destination"/>
+			<Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseTargetCommand}" Margin="5,0,0,0"/>
+		</Grid>
+
+		<TextBlock Text="Backup Type:" FontWeight="Bold"/>
+		<ComboBox ItemsSource="{Binding BackupTypes}"
+                  SelectedItem="{Binding CurrentJob.Type}"/>
+
+		<StackPanel Orientation="Horizontal"
+                   HorizontalAlignment="Right"
+                   Spacing="10"
+                   Margin="0,15,0,0">
+			<Button Content="Cancel" Width="80" Command="{Binding CancelCommand}"/>
+			<Button Content="Save" Width="80" Command="{Binding SaveCommand}"/>
+		</StackPanel>
+	</StackPanel>
 </Window>

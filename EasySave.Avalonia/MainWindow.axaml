@@ -9,9 +9,6 @@
         FontFamily="Segoe UI, Arial"
         WindowStartupLocation="CenterScreen">
 
-	<Window.DataContext>
-		<viewModels:BackupViewModel/>
-	</Window.DataContext>
 
 	<Window.Resources>
 		<converters:TypeToColorConverter x:Key="TypeToColorConverter"/>
@@ -20,10 +17,11 @@
 	</Window.Resources>
 
 	<Window.Styles>
+		<!-- Your existing styles remain unchanged -->
 		<Style Selector="TextBlock.header">
 			<Setter Property="FontSize" Value="24"/>
 			<Setter Property="FontWeight" Value="Bold"/>
-			<Setter Property="Foreground" Value="#2c3e50"/>
+			<Setter Property="Foreground" Value="#FFFF"/>
 			<Setter Property="Margin" Value="0,0,0,15"/>
 		</Style>
 
@@ -44,9 +42,18 @@
 			<Setter Property="Background" Value="#ecf0f1"/>
 		</Style>
 
-		<!-- Global TextTrimming style -->
 		<Style Selector="TextBlock.trimmed">
 			<Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+		</Style>
+
+		<!-- New sidebar button style -->
+		<Style Selector="Button.sidebar-button">
+			<Setter Property="HorizontalAlignment" Value="Stretch"/>
+			<Setter Property="HorizontalContentAlignment" Value="Left"/>
+			<Setter Property="Margin" Value="0,5"/>
+			<Setter Property="Padding" Value="15,10"/>
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Foreground" Value="#2c3e50"/>
 		</Style>
 	</Window.Styles>
 
@@ -56,27 +63,56 @@
 			<TextBlock Text="EasySave Backup Manager"
                        Classes="header"
                        HorizontalAlignment="Center"/>
-
 			<Separator Background="#bdc3c7" Margin="0,0,0,10"/>
 		</StackPanel>
 
-		<!-- Status Bar -->
-		<Border DockPanel.Dock="Bottom" Background="#ecf0f1" Padding="10">
-			<TextBlock Text="status message"
-                       Foreground="#2c3e50"
-                       TextWrapping="Wrap"/>
-		</Border>
-
-		<!-- Main Content -->
+		<!-- Main Content with Sidebar -->
 		<Grid>
 			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="1*"/>
+				<ColumnDefinition Width="250"/>
+				<!-- Sidebar -->
 				<ColumnDefinition Width="10"/>
+				<!-- Spacer -->
+				<ColumnDefinition Width="*"/>
+				<!-- Main content -->
+				<ColumnDefinition Width="10"/>
+				<!-- Spacer -->
 				<ColumnDefinition Width="300"/>
+				<!-- Details panel -->
 			</Grid.ColumnDefinitions>
 
-			<!-- Job List -->
-			<Border Grid.Column="0" BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4">
+			<!-- Sidebar -->
+			<Border Grid.Column="0"
+                    BorderBrush="#bdc3c7"
+                    BorderThickness="0,0,1,0"
+                    Padding="10">
+				<StackPanel>
+					<TextBlock Text="Navigation"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,15"
+                               Foreground="#2c3e50"/>
+
+					<Button Content="Dashboard" Classes="sidebar-button"/>
+					<Button Content="Backup Jobs" Classes="sidebar-button"/>
+					<Button Content="Settings" Classes="sidebar-button"/>
+					<Button Content="Logs" Classes="sidebar-button"/>
+
+					<Separator Background="#bdc3c7" Margin="0,15"/>
+
+					<TextBlock Text="Quick Actions"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,15"
+                               Foreground="#2c3e50"/>
+
+					<Button Content="Run All Jobs" Classes="sidebar-button"/>
+					<Button Content="Pause All" Classes="sidebar-button"/>
+				</StackPanel>
+			</Border>
+
+			<!-- Main Content Area -->
+			<Border Grid.Column="2" BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4">
 				<StackPanel>
 					<TextBlock Text="Backup Jobs"
                                FontSize="18"
@@ -90,7 +126,7 @@
                              Height="400">
 						<ListBox.ItemTemplate>
 							<DataTemplate x:DataType="models1:BackupJob">
-								<Grid >
+								<Grid>
 									<Grid.ColumnDefinitions>
 										<ColumnDefinition Width="150"/>
 										<ColumnDefinition Width="120"/>
@@ -131,30 +167,32 @@
 						</ListBox.ItemTemplate>
 					</ListBox>
 
-					<StackPanel Orientation="Horizontal"
-                                 HorizontalAlignment="Center"
-                                 Margin="0,10">
-						<Button Content="Add Job"
-                                Command="{Binding AddJobCommand}"
-                                ToolTip.Tip="Create a new backup job"/>
+					<Grid>
+						<StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,10">
+							<Button Content="Add Job"
+                                    Click="OnAddJobClick"
+                                    ToolTip.Tip="Create a new backup job"/>
 
-						<Button Content="Run Job"
-                                Command="{Binding RunJobCommand}"
-                                ToolTip.Tip="Execute the selected backup job"/>
+							<Button Content="Run Job"
+                                    Command="{Binding RunJobCommand}"
+                                    ToolTip.Tip="Execute the selected backup job"/>
 
-						<Button Content="Delete Job"
-                                Command="{Binding DeleteJobCommand}"
-                                ToolTip.Tip="Remove the selected backup job"/>
+							<Button Content="Delete Job"
+                                    Command="{Binding DeleteJobCommand}"
+                                    ToolTip.Tip="Remove the selected backup job"/>
 
-						<Button Content="Refresh"
-                                Command="{Binding LoadJobsCommand}"
-                                ToolTip.Tip="Reload all backup jobs"/>
-					</StackPanel>
+							<Button Content="Refresh"
+                                    Command="{Binding LoadJobsCommand}"
+                                    ToolTip.Tip="Reload all backup jobs"/>
+						</StackPanel>
+					</Grid>
 				</StackPanel>
 			</Border>
 
-			<!-- Job Details -->
-			<Border Grid.Column="2"
+			<!-- Job Details Panel -->
+			<Border Grid.Column="4"
                     BorderBrush="#bdc3c7"
                     BorderThickness="1"
                     CornerRadius="4"

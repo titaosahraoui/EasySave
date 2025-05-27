@@ -3,6 +3,8 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using BackupApp.Models;
 using BackupApp.ViewModels;
+using System.Threading.Tasks;
+using Avalonia;
 
 namespace BackupApp.Avalonia.Views
 {
@@ -11,13 +13,22 @@ namespace BackupApp.Avalonia.Views
         public AddEditBackupJobWindow()
         {
             InitializeComponent();
-            DataContext = new AddEditBackupJobViewModel();
+            DataContext = new AddEditBackupJobViewModel(this);
+#if DEBUG
+            this.AttachDevTools();
+#endif
         }
 
-        public AddEditBackupJobWindow(BackupJob existingJob)
+        public static async Task<BackupJob> Show(Window owner, BackupJob existingJob = null)
         {
-            InitializeComponent();
-            DataContext = new AddEditBackupJobViewModel(existingJob);
+            var window = new AddEditBackupJobWindow();
+            window.DataContext = new AddEditBackupJobViewModel(window)
+            {
+                CurrentJob = existingJob ?? new BackupJob()
+            };
+
+            await window.ShowDialog(owner);
+            return window.DataContext is AddEditBackupJobViewModel vm ? vm.CurrentJob : null;
         }
 
         private void InitializeComponent()

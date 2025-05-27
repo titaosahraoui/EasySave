@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BackupApp.Logging")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0e720fe8682c40fa29b52d898d3d9b6597f72026")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5264bb0a6ad6460edf4336bfff92c668f8840e5d")]
 [assembly: System.Reflection.AssemblyProductAttribute("BackupApp.Logging")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BackupApp.Logging")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
