@@ -1,19 +1,124 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui">
-    <StackPanel Margin="20" Spacing="15">
-        <TextBlock Text="Activity Logs" FontSize="20"/>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:BackupApp.ViewModels"
+             xmlns:global="clr-namespace:"
+             x:Class="BackupApp.Avalonia.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+	<ScrollViewer>
+		<StackPanel Margin="20" Spacing="15">
+			<!-- Language Selection -->
+			<Border BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4" Padding="10">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Language Settings" FontSize="16" FontWeight="Bold"/>
+					<ComboBox ItemsSource="{Binding AvailableLanguages}"
+                              SelectedItem="{Binding SelectedLanguage}"
+                              MinWidth="200"
+                              HorizontalAlignment="Left"/>
+				</StackPanel>
+			</Border>
 
-        <TextBox AcceptsReturn="True" IsReadOnly="True" Height="300"
-                 Text="2023-11-15 09:30: Documents Backup started
-2023-11-15 09:32: Copied 42 files (1.2GB)
-2023-11-15 09:35: Backup completed successfully
-----------------------------------------
-2023-11-14 14:15: Photos Backup started
-2023-11-14 14:20: Error copying photo123.jpg
-2023-11-14 14:21: Backup completed with errors"/>
+			<!-- Log Format Selection -->
+			<Border BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4" Padding="10">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Log Format Settings" FontSize="16" FontWeight="Bold"/>
+					<RadioButton GroupName="LogFormat"
+                                 Content="JSON Format"
+                                 IsChecked="{Binding IsJsonLogFormat}"/>
+					<RadioButton GroupName="LogFormat"
+                                 Content="XML Format"
+                                 IsChecked="{Binding IsXmlLogFormat}"/>
+				</StackPanel>
+			</Border>
 
-        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-            <Button Content="Refresh"/>
-            <Button Content="Export"/>
-        </StackPanel>
-    </StackPanel>
+			<!-- Priority Extensions -->
+			<Border BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4" Padding="10">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Priority File Extensions" FontSize="16" FontWeight="Bold"/>
+					<TextBlock Text="These extensions will be processed first:" FontSize="12"/>
+
+					<Grid>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*"/>
+							<ColumnDefinition Width="Auto"/>
+						</Grid.ColumnDefinitions>
+						<TextBox Grid.Column="0"
+                                 Text="{Binding NewPriorityExtension}"
+                                 Watermark="Enter extension (e.g., .docx)"/>
+						<Button Grid.Column="1"
+                                Content="Add"
+                                Command="{Binding AddPriorityExtensionCommand}"
+                                Margin="5,0,0,0"/>
+					</Grid>
+
+					<ListBox ItemsSource="{Binding PriorityExtensions}"
+                             Height="150">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="Auto"/>
+									</Grid.ColumnDefinitions>
+									<TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+									<Button Grid.Column="1"
+                                            Content="Remove"
+                                            Command="{Binding $parent[ItemsControl].DataContext.RemovePriorityExtensionCommand}"
+                                            CommandParameter="{Binding}"
+                                            Margin="5,0,0,0"/>
+								</Grid>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</StackPanel>
+			</Border>
+
+			<!-- Encrypted Extensions -->
+			<Border BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4" Padding="10">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Encrypted File Extensions" FontSize="16" FontWeight="Bold"/>
+					<TextBlock Text="These extensions will be encrypted during backup:" FontSize="12"/>
+
+					<Grid>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*"/>
+							<ColumnDefinition Width="Auto"/>
+						</Grid.ColumnDefinitions>
+						<TextBox Grid.Column="0"
+                                 Text="{Binding NewEncryptedExtension}"
+                                 Watermark="Enter extension (e.g., .pdf)"/>
+						<Button Grid.Column="1"
+                                Content="Add"
+                                Command="{Binding AddEncryptedExtensionCommand}"
+                                Margin="5,0,0,0"/>
+					</Grid>
+
+					<ListBox ItemsSource="{Binding EncryptedExtensions}"
+                             Height="150">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="Auto"/>
+									</Grid.ColumnDefinitions>
+									<TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+									<Button Grid.Column="1"
+                                            Content="Remove"
+                                            Command="{Binding $parent[ItemsControl].DataContext.RemoveEncryptedExtensionCommand}"
+                                            CommandParameter="{Binding}"
+                                            Margin="5,0,0,0"/>
+								</Grid>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</StackPanel>
+			</Border>
+
+			<!-- Save Button -->
+			<Button Content="Save Settings"
+                    HorizontalAlignment="Right"
+                    Command="{Binding SaveSettingsCommand}"
+                    Width="120"/>
+		</StackPanel>
+	</ScrollViewer>
 </UserControl>

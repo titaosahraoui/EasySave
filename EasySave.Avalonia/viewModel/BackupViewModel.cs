@@ -1,102 +1,101 @@
-﻿using ReactiveUI;
-using System.Collections.ObjectModel;
-using System.Reactive;
-using BackupApp.Models;
-using BackupApp.Controllers;
-using System.Threading.Tasks;
-using BackupApp.Avalonia.Views;
-using Avalonia.Controls;
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Threading;
+﻿using BackupApp.Models;
 using BackupApp.Data;
+using BackupApp.Services;
+using BackupApp.ViewModels;
 using System;
-using System.Diagnostics;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace BackupApp.ViewModels
 {
-    public class BackupViewModel : ReactiveObject
+    public class BackupViewModel : ViewModelBase
     {
-        private readonly BackupController _controller;
         private readonly BackupRepository _repository;
-        private readonly Dispatcher _dispatcher = Dispatcher.UIThread;
-        public ObservableCollection<BackupJob> Jobs { get; }
+        private readonly BackupService _backupService;
+        private readonly LanguageService _languageService;
 
         private BackupJob _selectedJob;
+        public ObservableCollection<BackupJob> Jobs { get; } = new();
+
         public BackupJob SelectedJob
         {
             get => _selectedJob;
-            set => this.RaiseAndSetIfChanged(ref _selectedJob, value);
+            set => SetProperty(ref _selectedJob, value);
         }
 
-        public ReactiveCommand<Unit, Unit> LoadJobsCommand { get; }
-        public ReactiveCommand<Unit, Unit> AddJobCommand { get; }
-        public ReactiveCommand<Unit, Unit> RunJobCommand { get; }
-        public ReactiveCommand<Unit, Unit> DeleteJobCommand { get; }
+        public ICommand LoadJobsCommand { get; }
+        public ICommand RunJobCommand { get; }
+        public ICommand DeleteJobCommand { get; }
 
         public BackupViewModel()
         {
-            _controller = new BackupController();
             _repository = new BackupRepository();
-            Jobs = new ObservableCollection<BackupJob>();
+            _backupService = new BackupService();
+            _languageService = new LanguageService();
 
-
-            LoadJobsCommand = ReactiveCommand.Create(LoadJobs);
-            AddJobCommand = ReactiveCommand.CreateFromTask(AddJobAsync);
-            RunJobCommand = ReactiveCommand.CreateFromTask(RunJobAsync);
-            DeleteJobCommand = ReactiveCommand.Create(DeleteJob);
+            LoadJobsCommand = new RelayCommand(LoadJobs);
+            RunJobCommand = new AsyncRelayCommand(RunSelectedJob);
+            DeleteJobCommand = new RelayCommand(DeleteSelectedJob);
 
             LoadJobs();
         }
 
         private void LoadJobs()
         {
+            var jobs = _repository.GetAllBackupJobs();
             Jobs.Clear();
-            var allJobs = _repository.GetAllBackupJobs();
-            Debug.WriteLine($"Loaded {allJobs.Count} jobs from repository");
-
-            foreach (var job in allJobs)
+            foreach (var job in jobs)
+            {
                 Jobs.Add(job);
+            }
         }
 
-        private async Task AddJobAsync()
+        public void RefreshBackupJobs()
         {
-            var window = GetMainWindow();
-            if (window == null) return;
-
-            await Dispatcher.UIThread.InvokeAsync(async () =>
+            var jobs = _repository.GetAllBackupJobs();
+            Jobs.Clear();
+            foreach (var job in jobs)
             {
-                var result = await AddEditBackupJobWindow.Show(window);
-                if (result != null)
+                Jobs.Add(job);
+            }
+        }
+
+        private async Task RunSelectedJob()
+        {
+            if (SelectedJob == null) return;
+
+            SelectedJob.Status = "Active";
+            OnPropertyChanged(nameof(SelectedJob));
+
+            try
+            {
+                await Task.Run(() =>
                 {
-                    _controller.AddJob(result);
-                    Jobs.Add(result);
-                }
+                    _backupService.PerformBackup(SelectedJob);
+                    SelectedJob.Status = "Completed";
+                    SelectedJob.LastRun = DateTime.Now;
+                });
+            }
+            catch (Exception ex)
+            {
+                SelectedJob.Status = "Error";
+                ShowError("Backup failed.", ex);
+            }
+
+            ExecuteOnUI(() =>
+            {
+                LoadJobs();
+                OnPropertyChanged(nameof(SelectedJob));
             });
         }
 
-        private async Task RunJobAsync()
+        private void DeleteSelectedJob()
         {
-            if (SelectedJob != null)
-            {
-                await Task.Run(() => _controller.RunBackup(SelectedJob.Id));
-                LoadJobs(); // Refresh the list
-            }
-        }
+            if (SelectedJob == null) return;
 
-        private void DeleteJob()
-        {
-            if (SelectedJob != null)
-            {
-                _controller.DeleteJob(SelectedJob.Id);
-                Jobs.Remove(SelectedJob);
-            }
-        }
-
-        private Window GetMainWindow()
-        {
-            return (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            _repository.DeleteBackupJob(SelectedJob.Id);
+            LoadJobs();
         }
     }
 }

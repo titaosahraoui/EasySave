@@ -28,8 +28,8 @@
 
 
 <ItemGroup>
-  <AvaloniaResource Include="**\*.xaml"/>
-  <AvaloniaResource Include="Assets\**"/>
+  <AvaloniaResource Include="**\*.xaml" />
+  <AvaloniaResource Include="Assets\**" />
 </ItemGroup>
 
 

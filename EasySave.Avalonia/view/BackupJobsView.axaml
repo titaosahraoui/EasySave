@@ -1,0 +1,200 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:BackupApp.Models;assembly=EasySave-V1"
+             xmlns:vm="clr-namespace:BackupApp.ViewModels"
+             xmlns:converters="clr-namespace:BackupApp.Avalonia.Converters"
+             xmlns:global="clr-namespace:"
+             x:Class="BackupApp.Avalonia.Views.BackupJobsView"
+             mc:Ignorable="d"
+             d:DesignWidth="800" d:DesignHeight="600"
+             x:DataType="vm:BackupViewModel">
+
+	<UserControl.Resources>
+		<converters:BackupTypeToColorConverter x:Key="TypeToColorConverter"/>
+		<converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
+		<converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+		<converters:NullableDateTimeToStringConverter x:Key="DateTimeConverter"/>
+	</UserControl.Resources>
+
+	<Grid Margin="10">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="2*"/>
+			<ColumnDefinition Width="10"/>
+			<ColumnDefinition Width="1*"/>
+		</Grid.ColumnDefinitions>
+
+		<!-- Jobs List Panel -->
+		<Border Grid.Column="0"
+                BorderBrush="#e0e0e0"
+                BorderThickness="1"
+                CornerRadius="4"
+                Background="White">
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="*"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
+
+				<!-- Header -->
+				<StackPanel Grid.Row="0" Margin="10">
+					<TextBlock Text="Backup Jobs"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="#2c3e50"/>
+					<Separator Background="#e0e0e0" Margin="0,5"/>
+				</StackPanel>
+
+				<!-- Jobs List -->
+				<ListBox Grid.Row="1"
+                         ItemsSource="{Binding Jobs}"
+                         SelectedItem="{Binding SelectedJob}"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         Margin="5">
+					<ListBox.ItemTemplate>
+						<DataTemplate DataType="models:BackupJob">
+							<Border Background="#f9f9f9" CornerRadius="4" Margin="0,2" Padding="10">
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="Auto"/>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="Auto"/>
+									</Grid.ColumnDefinitions>
+
+									<!-- Job Type Indicator -->
+									<Border Grid.Column="0"
+                                            Width="5"
+                                            Margin="0,0,10,0"
+                                            CornerRadius="2"
+                                            Background="{Binding Type, Converter={StaticResource TypeToColorConverter}}"/>
+
+									<!-- Job Details -->
+									<StackPanel Grid.Column="1">
+										<TextBlock Text="{Binding Name}"
+                                                   FontWeight="Bold"
+                                                   TextTrimming="CharacterEllipsis"/>
+										<TextBlock Text="{Binding SourcePath}"
+                                                   FontSize="12"
+                                                   Foreground="#666"
+                                                   TextTrimming="CharacterEllipsis"/>
+										<TextBlock Text="{Binding LastRun, Converter={StaticResource DateTimeConverter}}"
+                                                   FontSize="12"
+                                                   Foreground="#666"/>
+									</StackPanel>
+
+									<!-- Status Indicator -->
+									<StackPanel Grid.Column="2" HorizontalAlignment="Right">
+										<TextBlock Text="{Binding Status}"
+                                                   Foreground="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
+                                                   FontWeight="SemiBold"/>
+									</StackPanel>
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+
+				<!-- Action Buttons -->
+				<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
+					<Button Command="{Binding RunJobCommand}"
+                            Content="Run"
+                            ToolTip.Tip="Run selected backup job"
+                            Margin="0,0,10,0"
+                            Width="120"/>
+
+					<Button Command="{Binding DeleteJobCommand}"
+                            Content="Delete"
+                            ToolTip.Tip="Delete selected backup job"
+                            Background="#e74c3c"
+                            Foreground="White"
+                            Width="120"/>
+				</StackPanel>
+			</Grid>
+		</Border>
+
+		<!-- Job Details Panel -->
+		<Border Grid.Column="2"
+                BorderBrush="#e0e0e0"
+                BorderThickness="1"
+                CornerRadius="4"
+                Background="White"
+                Padding="15">
+			<ScrollViewer>
+				<StackPanel>
+					<TextBlock Text="Job Details"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"/>
+					<Separator Background="#e0e0e0" Margin="0,0,0,10"/>
+
+					<!-- Job Details -->
+					<Grid IsVisible="{Binding SelectedJob, Converter={StaticResource NullToBoolConverter}}">
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="Auto"/>
+							<RowDefinition Height="*"/>
+						</Grid.RowDefinitions>
+
+						<!-- Name -->
+						<StackPanel Grid.Row="0" Margin="0,0,0,10">
+							<TextBlock Text="Name"
+                                       FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.Name}"/>
+						</StackPanel>
+
+						<!-- Type -->
+						<StackPanel Grid.Row="1" Margin="0,0,0,10">
+							<TextBlock Text="Type"
+                                       FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.Type}"/>
+						</StackPanel>
+
+						<!-- Source -->
+						<StackPanel Grid.Row="2" Margin="0,0,0,10">
+							<TextBlock Text="Source"
+                                       FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.SourcePath}"
+                                       TextWrapping="Wrap"/>
+						</StackPanel>
+
+						<!-- Target -->
+						<StackPanel Grid.Row="3" Margin="0,0,0,10">
+							<TextBlock Text="Target"
+                                       FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.TargetPath}"
+                                       TextWrapping="Wrap"/>
+						</StackPanel>
+
+						<!-- Last Run -->
+						<StackPanel Grid.Row="4" Margin="0,0,0,10">
+							<TextBlock Text="Last Run"
+                                       FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.LastRun, Converter={StaticResource DateTimeConverter}}"/>
+						</StackPanel>
+
+						<!-- Status -->
+						<StackPanel Grid.Row="5" Margin="0,0,0,10">
+							<TextBlock Text="Status"
+                                       FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.Status}"/>
+						</StackPanel>
+					</Grid>
+
+					<!-- No Selection Message -->
+					<TextBlock Text="Select a job to view details"
+                               FontStyle="Italic"
+                               Foreground="#666"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding SelectedJob, Converter={StaticResource NullToBoolConverter}, ConverterParameter=Invert}"/>
+				</StackPanel>
+			</ScrollViewer>
+		</Border>
+	</Grid>
+</UserControl>
