@@ -1,0 +1,24 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:BackupApp.Avalonia.Converters"
+             x:Class="BackupApp.Avalonia.App"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+             <Application.Styles>
+                 <FluentTheme>
+                     <Style Selector="Button.NavButton">
+                         <Setter Property="Background" Value="Transparent"/>
+                         <Setter Property="Foreground" Value="#F1F1F1"/>
+                         <Setter Property="BorderThickness" Value="0"/>
+                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                         <Setter Property="Margin" Value="0,5"/>
+                         <Setter Property="Padding" Value="10,5"/>
+                     </Style>
+                 </FluentTheme>
+             </Application.Styles>
+
+	<Application.Resources>
+        <converters:EnumToStringConverter x:Key="EnumToStringConverter"/>
+    </Application.Resources>
+</Application>

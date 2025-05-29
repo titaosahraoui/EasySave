@@ -1,0 +1,122 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:BackupApp.ViewModels"
+        xmlns:models1="clr-namespace:BackupApp.Models;assembly=EasySave-V1"
+        xmlns:converters="clr-namespace:BackupApp.Avalonia.Converters"
+        xmlns:views="clr-namespace:BackupApp.Avalonia.Views"
+        xmlns:global="clr-namespace:"
+        x:Class="BackupApp.Avalonia.MainWindow"
+        x:DataType="viewModels:BackupViewModel"
+        Title="EasySave 2.0" Width="1000" Height="600"
+        FontFamily="Segoe UI, Arial"
+        WindowStartupLocation="CenterScreen">
+
+
+	<Window.Resources>
+		<converters:TypeToColorConverter x:Key="TypeToColorConverter"/>
+		<converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+		<converters:NullableDateTimeToStringConverter x:Key="NullableDateTimeConverter"/>
+	</Window.Resources>
+
+	<Window.Styles>
+		<!-- Your existing styles remain unchanged -->
+		<Style Selector="TextBlock.header">
+			<Setter Property="FontSize" Value="24"/>
+			<Setter Property="FontWeight" Value="Bold"/>
+			<Setter Property="Foreground" Value="#FFFF"/>
+			<Setter Property="Margin" Value="0,0,0,15"/>
+		</Style>
+
+		<Style Selector="Button">
+			<Setter Property="Padding" Value="10,5"/>
+			<Setter Property="MinWidth" Value="100"/>
+			<Setter Property="Margin" Value="5"/>
+			<Setter Property="Background" Value="#3498db"/>
+			<Setter Property="Foreground" Value="White"/>
+			<Setter Property="Cursor" Value="Hand"/>
+		</Style>
+
+		<Style Selector="Button:pointerover">
+			<Setter Property="Background" Value="#2980b9"/>
+		</Style>
+
+		<Style Selector="ListBoxItem:selected">
+			<Setter Property="Background" Value="#ecf0f1"/>
+		</Style>
+
+		<Style Selector="TextBlock.trimmed">
+			<Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+		</Style>
+
+		<!-- New sidebar button style -->
+		<Style Selector="Button.sidebar-button">
+			<Setter Property="HorizontalAlignment" Value="Stretch"/>
+			<Setter Property="HorizontalContentAlignment" Value="Left"/>
+			<Setter Property="Margin" Value="0,5"/>
+			<Setter Property="Padding" Value="15,10"/>
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="Foreground" Value="#2c3e50"/>
+		</Style>
+	</Window.Styles>
+
+	<DockPanel Margin="15">
+		<!-- Header -->
+		<StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+			<TextBlock Text="EasySave Backup Manager"
+                       Classes="header"
+                       HorizontalAlignment="Center"/>
+			<Separator Background="#bdc3c7" Margin="0,0,0,10"/>
+		</StackPanel>
+
+		<!-- Main Content with Sidebar -->
+		<Grid>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="250"/>
+				<!-- Sidebar -->
+				<ColumnDefinition Width="10"/>
+				<!-- Spacer -->
+				<ColumnDefinition Width="*"/>
+				<!-- Main content -->
+				<ColumnDefinition Width="10"/>
+				<!-- Spacer -->
+			</Grid.ColumnDefinitions>
+
+			<!-- Sidebar -->
+			<Border Grid.Column="0"
+                    BorderBrush="#bdc3c7"
+                    BorderThickness="0,0,1,0"
+                    Padding="10">
+				<StackPanel>
+					<TextBlock Text="Navigation"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,15"
+                               Foreground="#2c3e50"/>
+
+					<Button Content="Dashboard" Classes="sidebar-button"/>
+					<Button x:Name="BackupJobsButton" Content="BackupJobsView" Classes="sidebar-button"/>
+					<Button x:Name="SettingsButton" Content="SettingsView" Classes="sidebar-button"/>
+					<Button Content="Logs" Classes="sidebar-button"/>
+
+					<Separator Background="#bdc3c7" Margin="0,15"/>
+
+					<TextBlock Text="Quick Actions"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,15"
+                               Foreground="#2c3e50"/>
+
+					<Button Content="Run All Jobs" Classes="sidebar-button"/>
+					<Button Content="Pause All" Classes="sidebar-button"/>
+				</StackPanel>
+			</Border>
+
+            <Border Grid.Column="2" BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4">
+                <ContentControl x:Name="MainContent">
+                    <!-- Default content -->
+                    <views:BackupJobsView/>
+                </ContentControl>
+            </Border>
+		</Grid>
+	</DockPanel>
+</Window>

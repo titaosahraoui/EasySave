@@ -1,0 +1,11 @@
+[
+  {
+    "Id": 1,
+    "Name": "New Job",
+    "SourcePath": "C:\\Source",
+    "TargetPath": "C:\\Backup",
+    "Type": 0,
+    "CreatedAt": "2025-05-26T10:33:38.5269907+01:00",
+    "LastRun": null
+  }
+]

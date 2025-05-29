@@ -3,9 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasySave-V1", "EasySave-V1.csproj", "{34BD9FD4-5897-471F-B25D-84B51796C0F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasySave-V1", "EasySave-V1.csproj", "{34BD9FD4-5897-471F-B25D-84B51796C0F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackupApp.Logging", "..\BackupApp.Logging\BackupApp.Logging.csproj", "{5767BF2E-CA7F-4D2E-A9BE-7B24680B6B76}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BackupApp.Logging", "..\BackupApp.Logging\BackupApp.Logging.csproj", "{5767BF2E-CA7F-4D2E-A9BE-7B24680B6B76}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasySave.Avalonia", "..\EasySave.Avalonia\EasySave.Avalonia.csproj", "{EC734E61-1567-4B51-9C59-130EAC072B0C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CryptoSoft", "..\CryptoSoft\CryptoSoft.csproj", "{2D43E7FE-5B2A-4551-AA3E-BBD1FA725136}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{5767BF2E-CA7F-4D2E-A9BE-7B24680B6B76}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5767BF2E-CA7F-4D2E-A9BE-7B24680B6B76}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5767BF2E-CA7F-4D2E-A9BE-7B24680B6B76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC734E61-1567-4B51-9C59-130EAC072B0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC734E61-1567-4B51-9C59-130EAC072B0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC734E61-1567-4B51-9C59-130EAC072B0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC734E61-1567-4B51-9C59-130EAC072B0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D43E7FE-5B2A-4551-AA3E-BBD1FA725136}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D43E7FE-5B2A-4551-AA3E-BBD1FA725136}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D43E7FE-5B2A-4551-AA3E-BBD1FA725136}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D43E7FE-5B2A-4551-AA3E-BBD1FA725136}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

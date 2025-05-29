@@ -1,16 +1,19 @@
-﻿using System.IO;
+﻿using BackupApp.Logging;
+using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
-using BackupApp.Logging;
 
 namespace BackupApp
 {
     public class AppConfig
     {
-        public string DefaultLanguage { get; set; } = "en"; // Default to English
-        public LogFormat DefaultLogFormat { get; internal set; }
+        public string DefaultLanguage { get; set; } = "en-US";
+        public LogFormat DefaultLogFormat { get; set; } = LogFormat.Json;
+        public List<string> PriorityExtensions { get; set; } = new List<string>();
+        public List<string> EncryptedExtensions { get; set; } = new List<string>();
 
         private static readonly string ConfigPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "EasySave",
             "config.json");
 
@@ -33,7 +36,11 @@ namespace BackupApp
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
-                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
                 File.WriteAllText(ConfigPath, json);
             }
             catch { }

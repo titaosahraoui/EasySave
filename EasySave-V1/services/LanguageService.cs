@@ -1,9 +1,10 @@
 ﻿using BackupApp;
+using ReactiveUI;
 using System.Globalization;
 using System.Reflection;
 using System.Resources;
 
-public class LanguageService
+public class LanguageService : ReactiveObject
 {
     private readonly ResourceManager _resourceManager;
     private CultureInfo _currentCulture;
@@ -22,6 +23,11 @@ public class LanguageService
         {
             _currentCulture = CultureInfo.InvariantCulture;
         }
+    }
+
+    public string GetCurrentLanguage()
+    {
+        return _currentCulture.Name;
     }
 
     public void SetLanguage(string languageCode)
@@ -52,4 +58,5 @@ public class LanguageService
             return $"[{key}]"; // Return placeholder on error
         }
     }
+
 }
