@@ -2,20 +2,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:BackupApp.Avalonia.Converters"
              x:Class="BackupApp.Avalonia.App"
-             RequestedThemeVariant="Default">
+
+             RequestedThemeVariant="Light">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
              <Application.Styles>
-                 <FluentTheme>
-                     <Style Selector="Button.NavButton">
-                         <Setter Property="Background" Value="Transparent"/>
-                         <Setter Property="Foreground" Value="#F1F1F1"/>
-                         <Setter Property="BorderThickness" Value="0"/>
-                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                         <Setter Property="Margin" Value="0,5"/>
-                         <Setter Property="Padding" Value="10,5"/>
-                     </Style>
-                 </FluentTheme>
+                 <FluentTheme />
+                 <!-- Ensures white/light theme -->
+
+                 <!-- Global text color -->
+                 <Style Selector="TextBlock">
+                     <Setter Property="Foreground" Value="Black"/>
+                 </Style>
+
+                 <!-- Button style -->
+                 <Style Selector="Button">
+                     <Setter Property="Background" Value="#007BFF"/>
+                     <!-- Bootstrap Blue -->
+                     <Setter Property="Foreground" Value="White"/>
+                     <Setter Property="BorderBrush" Value="#007BFF"/>
+                     <Setter Property="CornerRadius" Value="4"/>
+                     <Setter Property="Padding" Value="10,5"/>
+                     <Setter Property="FontWeight" Value="Bold"/>
+                 </Style>
+
+                 <!-- Optional: Specific style for .NavButton if needed -->
+                 <Style Selector="Button.NavButton">
+                     <Setter Property="Background" Value="Transparent"/>
+                     <Setter Property="Foreground" Value="Black"/>
+                     <Setter Property="BorderThickness" Value="0"/>
+                     <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                     <Setter Property="Margin" Value="0,5"/>
+                     <Setter Property="Padding" Value="10,5"/>
+                 </Style>
              </Application.Styles>
 
 	<Application.Resources>

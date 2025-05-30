@@ -13,6 +13,8 @@
                            long fileSize, long transferTimeMs, bool success);
         void LogDirectoryCreation(string backupName, string path);
         void LogError(string backupName, string errorMessage);
+
+        void LogWarning(string backupName, string warningMessage); 
         List<LogEntry> GetDailyLogs();
     }
 }

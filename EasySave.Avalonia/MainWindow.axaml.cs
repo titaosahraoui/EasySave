@@ -11,7 +11,6 @@ namespace BackupApp.Avalonia
         public MainWindow()
         {
             InitializeComponent();  // Must come first
-            DataContext = new MainWindowViewModel();
 
             // Initialize main content
             //SetupNavigation();

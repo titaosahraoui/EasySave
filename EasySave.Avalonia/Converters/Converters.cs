@@ -1,5 +1,6 @@
 ﻿using Avalonia.Data;
 using Avalonia.Data.Converters;
+using Avalonia.Media;
 using BackupApp.Models;
 using System;
 using System.Globalization;
@@ -154,5 +155,24 @@ namespace BackupApp.Avalonia.Converters
     public enum BooleanOperation
     {
         Inverse
+    }
+
+    public class ProgressToColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is double progress)
+            {
+                if (progress < 30) return Brushes.Orange;
+                if (progress < 70) return Brushes.LightBlue;
+                return Brushes.LightGreen;
+            }
+            return Brushes.LightGray;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -1,54 +1,88 @@
-﻿using ReactiveUI;
-using BackupApp.Views;
-using System;
-using System.Reactive;
+﻿using BackupApp.Models;
+using BackupApp.ViewModels;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Windows.Input;
 
-namespace BackupApp.ViewModels
+public class MainWindowViewModel : ViewModelBase
 {
-    public class MainWindowViewModel : ReactiveObject
+    private ViewModelBase _currentView;
+    public ViewModelBase CurrentView
     {
-        private ViewModelBase _currentView;
-        public ViewModelBase CurrentView
+        get => _currentView;
+        set => SetProperty(ref _currentView, value);
+    }
+
+    public BackupViewModel BackupVM { get; }
+
+    // Commands
+    public ICommand RunAllJobsCommand { get; }
+    public ICommand PauseAllJobsCommand { get; }
+    public ICommand ResumeAllJobsCommand { get; }
+    public ICommand StopAllJobsCommand { get; }
+    public ICommand NavigateToBackupJobsCommand { get; }
+
+    public MainWindowViewModel()
+    {
+        // Initialize the Backup ViewModel
+        BackupVM = new BackupViewModel();
+
+        // Initialize commands
+        RunAllJobsCommand = new AsyncRelayCommand(RunAllJobs);
+        PauseAllJobsCommand = new RelayCommand(PauseAllJobs);
+        ResumeAllJobsCommand = new RelayCommand(ResumeAllJobs);
+        StopAllJobsCommand = new RelayCommand(StopAllJobs);
+        NavigateToBackupJobsCommand = new RelayCommand(NavigateToBackupJobs);
+
+        // Set default view
+        NavigateToBackupJobs();
+    }
+
+    private async Task RunAllJobs()
+    {
+        if (CurrentView is BackupViewModel backupVM)
         {
-            get => _currentView;
-            set => this.RaiseAndSetIfChanged(ref _currentView, value);
+            // Select all jobs and run them
+            backupVM.SelectedJobs = new List<BackupJob>(backupVM.Jobs);
+            await backupVM.RunSelectedJob();
         }
+    }
 
-        public ReactiveCommand<Unit, Unit> NavigateToDashboardCommand { get; }
-        public ReactiveCommand<Unit, Unit> NavigateToBackupJobsCommand { get; }
-        public ReactiveCommand<Unit, Unit> NavigateToSettingsCommand { get; }
-        public ReactiveCommand<Unit, Unit> NavigateToLogsCommand { get; }
-
-        public MainWindowViewModel()
+    private void PauseAllJobs()
+    {
+        if (CurrentView is BackupViewModel backupVM)
         {
-            // Initialize commands
-            //NavigateToDashboardCommand = ReactiveCommand.Create(NavigateToDashboard);
-            NavigateToBackupJobsCommand = ReactiveCommand.Create(NavigateToBackupJobs);
-            //NavigateToSettingsCommand = ReactiveCommand.Create(NavigateToSettings);
-            //NavigateToLogsCommand = ReactiveCommand.Create(NavigateToLogs);
-
-            // Set default view
-            NavigateToBackupJobs();
+            foreach (var job in backupVM.Jobs)
+            {
+                backupVM._backupService.PauseBackup(job.Id);
+            }
         }
+    }
 
-        //private void NavigateToDashboard()
-        //{
-        //    CurrentView = new DashboardViewModel();
-        //}
-
-        private void NavigateToBackupJobs()
+    private void ResumeAllJobs()
+    {
+        if (CurrentView is BackupViewModel backupVM)
         {
-            CurrentView = new BackupViewModel();
+            foreach (var job in backupVM.Jobs)
+            {
+                backupVM._backupService.ResumeBackup(job.Id);
+            }
         }
+    }
 
-        //private void NavigateToSettings()
-        //{
-        //    CurrentView = new SettingsViewModel();
-        //}
+    private void StopAllJobs()
+    {
+        if (CurrentView is BackupViewModel backupVM)
+        {
+            foreach (var job in backupVM.Jobs)
+            {
+                backupVM._backupService.StopBackup(job.Id);
+            }
+        }
+    }
 
-        //private void NavigateToLogs()
-        //{
-        //    CurrentView = new LogsViewModel();
-        //}
+    private void NavigateToBackupJobs()
+    {
+        CurrentView = BackupVM;
     }
 }

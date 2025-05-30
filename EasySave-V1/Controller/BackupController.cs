@@ -13,8 +13,10 @@ namespace BackupApp.Controllers
 
         public BackupController()
         {
+            var monitoredApps = new[] { "Word", "Excel", "notepad" }; // replace with actual process names you want to monitor
+            var softwareMonitor = new BusinessSoftwareMonitor(monitoredApps);
             _repository = new BackupRepository();
-            _backupService = new BackupService();
+            _backupService = new BackupService(softwareMonitor);
         }
 
         public List<BackupJob> GetAllJobs() => _repository.GetAllBackupJobs();

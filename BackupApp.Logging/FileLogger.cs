@@ -105,5 +105,18 @@ namespace BackupApp.Logging
 
             return logs;
         }
+        public void LogWarning(string backupName, string warningMessage)
+        {
+            var entry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                BackupName = backupName,
+                SourcePath = warningMessage,
+                ActionType = "Warning",
+                Success = false
+            };
+
+            AppendLog(entry);
+        }
     }
 }

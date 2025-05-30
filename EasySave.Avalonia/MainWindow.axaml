@@ -6,11 +6,14 @@
         xmlns:views="clr-namespace:BackupApp.Avalonia.Views"
         xmlns:global="clr-namespace:"
         x:Class="BackupApp.Avalonia.MainWindow"
-        x:DataType="viewModels:BackupViewModel"
+        x:DataType="global:MainWindowViewModel"
         Title="EasySave 2.0" Width="1000" Height="600"
         FontFamily="Segoe UI, Arial"
         WindowStartupLocation="CenterScreen">
 
+	<Window.DataContext>
+        <global:MainWindowViewModel />
+    </Window.DataContext>
 
 	<Window.Resources>
 		<converters:TypeToColorConverter x:Key="TypeToColorConverter"/>
@@ -23,7 +26,7 @@
 		<Style Selector="TextBlock.header">
 			<Setter Property="FontSize" Value="24"/>
 			<Setter Property="FontWeight" Value="Bold"/>
-			<Setter Property="Foreground" Value="#FFFF"/>
+			<Setter Property="Foreground" Value="Black"/>
 			<Setter Property="Margin" Value="0,0,0,15"/>
 		</Style>
 
@@ -64,6 +67,7 @@
 		<StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
 			<TextBlock Text="EasySave Backup Manager"
                        Classes="header"
+                       Foreground="Black"
                        HorizontalAlignment="Center"/>
 			<Separator Background="#bdc3c7" Margin="0,0,0,10"/>
 		</StackPanel>
@@ -104,10 +108,20 @@
                                FontSize="16"
                                FontWeight="Bold"
                                Margin="0,0,0,15"
-                               Foreground="#2c3e50"/>
+                               />
 
-					<Button Content="Run All Jobs" Classes="sidebar-button"/>
-					<Button Content="Pause All" Classes="sidebar-button"/>
+                    <Button Content="Run All Jobs"
+                            Classes="sidebar-button"
+                            Command="{Binding RunAllJobsCommand}"/>
+                    <Button Content="Pause All"
+                            Classes="sidebar-button"
+                            Command="{Binding PauseAllJobsCommand}"/>
+                    <Button Content="Resume All"
+                            Classes="sidebar-button"
+                            Command="{Binding ResumeAllJobsCommand}"/>
+                    <Button Content="Stop All"
+                            Classes="sidebar-button"
+                            Command="{Binding StopAllJobsCommand}"/>
 				</StackPanel>
 			</Border>
 

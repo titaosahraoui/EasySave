@@ -3,20 +3,203 @@ using System.Diagnostics;
 using System.IO;
 using BackupApp.Models;
 using BackupApp.Logging;
+using BackupApp.services;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace BackupApp.Services
 {
-    public class BackupService
+    public class BackupService : IBackupService
     {
         private readonly LanguageService _languageService;
         private readonly ILogger _logger;
         private readonly IStateManager _stateManager;
+        private readonly ConcurrentDictionary<int, BackupTask> _activeTasks = new();
+        private readonly PriorityFileQueue _priorityQueue = new();
+        private readonly SemaphoreSlim _largeFileSemaphore = new(1, 1);
+        private readonly BusinessSoftwareMonitor _softwareMonitor;
+        private int _maxParallelFileSizeKB = 1024; // Configurable
 
-        public BackupService(LogFormat logFormat = LogFormat.Json)
+        public BackupService(BusinessSoftwareMonitor softwareMonitor, LogFormat logFormat = LogFormat.Json )
         {
             _languageService = new LanguageService();
             _logger = logFormat == LogFormat.Json ? new FileLogger() : new XmlFileLogger();
             _stateManager = new FileStateManager();
+            _softwareMonitor = softwareMonitor;
+            _softwareMonitor.SoftwareRunningChanged += (isRunning) =>
+            {
+                foreach (var task in _activeTasks.Values)
+                {
+                    if (isRunning) task.Pause();
+                    else task.Resume();
+                }
+            };
+        }
+
+        public async Task PerformBackupAsync(BackupJob job, IProgress<BackupProgressReport> progress, CancellationToken cancellationToken)
+        {
+            if (job == null) throw new ArgumentNullException(nameof(job));
+
+            var allFiles = Directory.GetFiles(job.SourcePath, "*", SearchOption.AllDirectories);
+            long totalSize = CalculateTotalSize(allFiles);
+            long processedSize = 0;
+
+            foreach (var file in allFiles)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var fileInfo = new FileInfo(file);
+                string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+
+                // Report progress before processing
+                progress?.Report(new BackupProgressReport
+                {
+                    CurrentFile = Path.GetFileName(file),
+                    ProgressPercentage = (double)processedSize / totalSize * 100
+                });
+
+                // Process the file (copy it)
+                await TransferFile(file, destFile);
+
+                // Update progress
+                processedSize += fileInfo.Length;
+                progress?.Report(new BackupProgressReport
+                {
+                    CurrentFile = Path.GetFileName(file),
+                    ProgressPercentage = (double)processedSize / totalSize * 100
+                });
+            }
+        }
+
+        private async Task ProcessBackupJob(BackupJob job, BackupTask task, CancellationToken ct)
+        {
+            var state = InitializeBackupState(job);
+            var files = GetFilesToBackup(job.SourcePath);
+            var parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount,
+                CancellationToken = ct
+            };
+
+            await Parallel.ForEachAsync(files, parallelOptions, async (file, innerCt) =>
+            {
+                await ProcessFile(job, file, task, state, innerCt);
+            });
+
+            FinalizeBackup(job, state, true);
+        }
+
+        private async Task ProcessFile(BackupJob job, string file, BackupTask task, BackupState state, CancellationToken ct)
+        {
+            var fileInfo = new FileInfo(file);
+            bool isLargeFile = fileInfo.Length > _maxParallelFileSizeKB * 1024;
+            string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+
+            try
+            {
+                if (isLargeFile) await _largeFileSemaphore.WaitAsync(ct);
+                if (_priorityQueue.HasPriorityFiles() && !_priorityQueue.IsPriorityFile(file))
+                {
+                    await _priorityQueue.WaitForPriorityFiles(ct);
+                }
+
+                await task.WaitIfPaused(ct);
+                ct.ThrowIfCancellationRequested();
+
+                UpdateCurrentFileState(job, state, file, destFile);
+                await TransferFile(file, GetDestinationPath(file, job.SourcePath, job.TargetPath));
+                UpdateProgressState(job, state, fileInfo.Length);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning(job.Name, $"Backup was cancelled during file transfer: {file}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(job.Name, $"{_languageService.GetString("FileCopyError")} {file}: {ex.Message}");
+            }
+            finally
+            {
+                if (isLargeFile) _largeFileSemaphore.Release();
+            }
+        }
+
+        private string[] GetFilesToBackup(string sourcePath)
+        {
+            return Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories);
+        }
+        private async Task TransferFile(string sourcePath, string destinationPath)
+        {
+            // Create directory if it doesn't exist
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+
+            using (var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read))
+            using (var destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+            {
+                await sourceStream.CopyToAsync(destinationStream);
+            }
+
+            // Preserve original file timestamps
+            var fileInfo = new FileInfo(sourcePath);
+            File.SetLastWriteTime(destinationPath, fileInfo.LastWriteTime);
+            File.SetCreationTime(destinationPath, fileInfo.CreationTime);
+        }
+
+        public void PauseBackup(int jobId)
+        {
+            if (_activeTasks.TryGetValue(jobId, out var task))
+            {
+                task.Pause();
+            }
+        }
+
+        public void ResumeBackup(int jobId)
+        {
+            if (_activeTasks.TryGetValue(jobId, out var task))
+            {
+                task.Resume();
+            }
+        }
+
+        public void StopBackup(int jobId)
+        {
+            if (_activeTasks.TryGetValue(jobId, out var task))
+            {
+                task.Stop();
+            }
+        }
+
+        private BackupState InitializeBackupState(BackupJob job)
+        {
+            return new BackupState
+            {
+                BackupName = job.Name,
+                Status = "Active",
+                LastActionTimestamp = DateTime.Now,
+                CurrentSourceFile = string.Empty,
+                CurrentDestFile = string.Empty
+            };
+        }
+
+        private void FinalizeBackup(BackupJob job, BackupState state, bool success)
+        {
+            job.LastRun = DateTime.Now;
+            state.Status = success ? "Completed" : "Error";
+            state.LastActionTimestamp = DateTime.Now;
+            _stateManager.UpdateState(job.Name, state);
+        }
+
+        private void LogError(string context, string message)
+        {
+            Console.WriteLine(message);
+            _logger.LogError(context, message);
+        }
+
+        private void LogWarning(string context, string message)
+        {
+            Console.WriteLine(message);
+            _logger.LogWarning(context, message);
         }
 
         public void PerformBackup(BackupJob job)
@@ -317,6 +500,102 @@ namespace BackupApp.Services
             string relativePath = Path.GetRelativePath(sourceRoot, sourcePath);
             return Path.Combine(targetRoot, relativePath);
         }
+    }
+
+    public class BackupTask
+    {
+        private readonly SemaphoreSlim _pauseSemaphore = new(1, 1);
+        private readonly CancellationTokenSource _cts = new();
+        private volatile TaskState _state = TaskState.Ready;
+
+        public BackupJob Job { get; }
+        public double Progress { get; private set; }
+        public string CurrentFile { get; private set; }
+
+        public BackupTask(BackupJob job)
+        {
+            Job = job;
+        }
+
+        public async Task WaitIfPaused(CancellationToken ct)
+        {
+            while (_state == TaskState.Paused)
+            {
+                await Task.Delay(100, ct);
+            }
+            ct.ThrowIfCancellationRequested();
+        }
+
+        public void Pause() => ChangeState(TaskState.Paused);
+        public void Resume() => ChangeState(TaskState.Running);
+        public void Stop() => _cts.Cancel();
+
+        private void ChangeState(TaskState newState)
+        {
+            _state = newState;
+            Job.Status = newState.ToString();
+        }
+
+        public enum TaskState { Ready, Running, Paused, Stopped }
+    }
+
+    public class PriorityFileQueue
+    {
+        private readonly HashSet<string> _priorityExtensions = new();
+        private readonly SemaphoreSlim _prioritySemaphore = new(0, 1);
+
+        public void SetPriorityExtensions(IEnumerable<string> extensions)
+        {
+            _priorityExtensions.Clear(); // Clear existing extensions
+            foreach (var ext in extensions)
+            {
+                _priorityExtensions.Add(ext.StartsWith(".") ? ext : $".{ext}");
+            }
+        }
+
+        public bool HasPriorityFiles() => _priorityExtensions.Count > 0;
+        public bool IsPriorityFile(string filePath) =>
+            _priorityExtensions.Contains(Path.GetExtension(filePath));
+
+        public async Task WaitForPriorityFiles(CancellationToken ct)
+        {
+            while (HasPriorityFiles())
+            {
+                await Task.Delay(100, ct);
+            }
+        }
+    }
+
+    public class BusinessSoftwareMonitor
+    {
+        private readonly HashSet<string> _businessProcessNames;
+        private readonly Timer _monitoringTimer;
+        private bool _isRunning;
+
+        public event Action<bool> SoftwareRunningChanged;
+
+        public BusinessSoftwareMonitor(IEnumerable<string> processNames)
+        {
+            _businessProcessNames = new HashSet<string>(processNames, StringComparer.OrdinalIgnoreCase);
+            _monitoringTimer = new Timer(CheckProcesses, null, 0, 1000);
+        }
+
+        private void CheckProcesses(object state)
+        {
+            bool anyRunning = Process.GetProcesses()
+                .Any(p => _businessProcessNames.Contains(p.ProcessName));
+
+            if (anyRunning != _isRunning)
+            {
+                _isRunning = anyRunning;
+                SoftwareRunningChanged?.Invoke(_isRunning);
+            }
+        }
+    }
+    public class BackupProgressReport
+    {
+        public double ProgressPercentage { get; set; }
+        public string CurrentFile { get; set; }
     }
 
 }

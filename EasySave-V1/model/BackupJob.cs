@@ -1,6 +1,7 @@
 ﻿using ReactiveUI;
 using System;
 
+
 namespace BackupApp.Models
 {
     public class BackupJob : ReactiveObject
@@ -13,11 +14,9 @@ namespace BackupApp.Models
         private DateTime _createdAt = DateTime.Now;
         private DateTime? _lastRun;
         private string _status = "Pending";
-        public string Status
-        {
-            get => _status;
-            set => this.RaiseAndSetIfChanged(ref _status, value);
-        }
+        private double _progress;
+        private string _currentFile;
+
 
         public int Id
         {
@@ -59,6 +58,21 @@ namespace BackupApp.Models
         {
             get => _lastRun;
             set => this.RaiseAndSetIfChanged(ref _lastRun, value);
+        }
+        public string Status
+        {
+            get => _status;
+            set => this.RaiseAndSetIfChanged(ref _status, value);
+        }
+        public double Progress
+        {
+            get => _progress;
+            set => this.RaiseAndSetIfChanged(ref _progress, value);
+        }
+        public string CurrentFile
+        {
+            get => _currentFile;
+            set => this.RaiseAndSetIfChanged(ref _currentFile, value);
         }
     }
 
