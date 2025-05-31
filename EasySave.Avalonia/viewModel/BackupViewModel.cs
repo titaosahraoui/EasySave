@@ -69,7 +69,7 @@ namespace BackupApp.ViewModels
             LoadJobs();
         }
 
-        private void LoadJobs()
+        internal void LoadJobs()
         {
             var jobs = _repository.GetAllBackupJobs();
             Jobs.Clear();

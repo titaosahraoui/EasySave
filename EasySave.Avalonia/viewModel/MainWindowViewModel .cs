@@ -1,88 +1,88 @@
 ﻿using BackupApp.Models;
 using BackupApp.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-public class MainWindowViewModel : ViewModelBase
+
+namespace BackupApp.ViewModels
 {
-    private ViewModelBase _currentView;
-    public ViewModelBase CurrentView
+    public class MainWindowViewModel : ViewModelBase
     {
-        get => _currentView;
-        set => SetProperty(ref _currentView, value);
-    }
+        private ViewModelBase _currentView;
 
-    public BackupViewModel BackupVM { get; }
+        public ViewModelBase CurrentView
+        {
+            get => _currentView;
+            set => SetProperty(ref _currentView, value);
+        }
 
-    // Commands
-    public ICommand RunAllJobsCommand { get; }
-    public ICommand PauseAllJobsCommand { get; }
-    public ICommand ResumeAllJobsCommand { get; }
-    public ICommand StopAllJobsCommand { get; }
-    public ICommand NavigateToBackupJobsCommand { get; }
+        public BackupViewModel BackupVM { get; }
 
-    public MainWindowViewModel()
-    {
-        // Initialize the Backup ViewModel
-        BackupVM = new BackupViewModel();
+        // Commands
+        public ICommand RunAllJobsCommand { get; }
+        public ICommand PauseAllJobsCommand { get; }
+        public ICommand ResumeAllJobsCommand { get; }
+        public ICommand StopAllJobsCommand { get; }
+        public ICommand NavigateToBackupJobsCommand { get; }
+        public ICommand NavigateToSettingsCommand { get; }
 
-        // Initialize commands
-        RunAllJobsCommand = new AsyncRelayCommand(RunAllJobs);
-        PauseAllJobsCommand = new RelayCommand(PauseAllJobs);
-        ResumeAllJobsCommand = new RelayCommand(ResumeAllJobs);
-        StopAllJobsCommand = new RelayCommand(StopAllJobs);
-        NavigateToBackupJobsCommand = new RelayCommand(NavigateToBackupJobs);
+        public MainWindowViewModel()
+        {
+            // Initialize the Backup ViewModel
+            BackupVM = new BackupViewModel();
+            CurrentView = BackupVM;
+            // Initialize commands
+            RunAllJobsCommand = new AsyncRelayCommand(RunAllJobs);
+            PauseAllJobsCommand = new RelayCommand(PauseAllJobs);
+            ResumeAllJobsCommand = new RelayCommand(ResumeAllJobs);
+            StopAllJobsCommand = new RelayCommand(StopAllJobs);
+            NavigateToBackupJobsCommand = new RelayCommand(NavigateToBackupJobs);
+            NavigateToSettingsCommand = new RelayCommand(NavigateToSettings);
+            // Set default view
+            NavigateToBackupJobs();
+        }
 
-        // Set default view
-        NavigateToBackupJobs();
-    }
-
-    private async Task RunAllJobs()
-    {
-        if (CurrentView is BackupViewModel backupVM)
+        private async Task RunAllJobs()
         {
             // Select all jobs and run them
-            backupVM.SelectedJobs = new List<BackupJob>(backupVM.Jobs);
-            await backupVM.RunSelectedJob();
+            BackupVM.SelectedJobs = new List<BackupJob>(BackupVM.Jobs);
+            await BackupVM.RunSelectedJob();
         }
-    }
 
-    private void PauseAllJobs()
-    {
-        if (CurrentView is BackupViewModel backupVM)
+        private void PauseAllJobs()
         {
-            foreach (var job in backupVM.Jobs)
+            foreach (var job in BackupVM.Jobs)
             {
-                backupVM._backupService.PauseBackup(job.Id);
+                BackupVM._backupService.PauseBackup(job.Id);
             }
         }
-    }
 
-    private void ResumeAllJobs()
-    {
-        if (CurrentView is BackupViewModel backupVM)
+        private void ResumeAllJobs()
         {
-            foreach (var job in backupVM.Jobs)
+            foreach (var job in BackupVM.Jobs)
             {
-                backupVM._backupService.ResumeBackup(job.Id);
+                BackupVM._backupService.ResumeBackup(job.Id);
             }
         }
-    }
 
-    private void StopAllJobs()
-    {
-        if (CurrentView is BackupViewModel backupVM)
+        private void StopAllJobs()
         {
-            foreach (var job in backupVM.Jobs)
+            foreach (var job in BackupVM.Jobs)
             {
-                backupVM._backupService.StopBackup(job.Id);
+                BackupVM._backupService.StopBackup(job.Id);
             }
         }
-    }
 
-    private void NavigateToBackupJobs()
-    {
-        CurrentView = BackupVM;
+        private void NavigateToBackupJobs()
+        {
+            CurrentView = BackupVM;
+        }
+        private void NavigateToSettings()
+        {
+            CurrentView = new SettingsViewModel(); // You'll need to create this
+
+        }
     }
 }

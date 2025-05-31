@@ -36,41 +36,76 @@ namespace BackupApp.Services
             };
         }
 
-        public async Task PerformBackupAsync(BackupJob job, IProgress<BackupProgressReport> progress, CancellationToken cancellationToken)
+        public async Task PerformBackupAsync(BackupJob job, IProgress<BackupProgressReport> progress, CancellationToken externalToken)
         {
             if (job == null) throw new ArgumentNullException(nameof(job));
 
-            var allFiles = Directory.GetFiles(job.SourcePath, "*", SearchOption.AllDirectories);
-            long totalSize = CalculateTotalSize(allFiles);
-            long processedSize = 0;
-
-            foreach (var file in allFiles)
+            var task = new BackupTask(job);
+            if (!_activeTasks.TryAdd(job.Id, task))
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                throw new InvalidOperationException($"A backup task for job {job.Id} already exists");
+            }
 
-                var fileInfo = new FileInfo(file);
-                string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+            try
+            {
+                // Create linked token source
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalToken, task.CancellationToken);
+                var token = linkedCts.Token;
 
-                // Report progress before processing
-                progress?.Report(new BackupProgressReport
+                var allFiles = Directory.GetFiles(job.SourcePath, "*", SearchOption.AllDirectories);
+                long totalSize = CalculateTotalSize(allFiles);
+                long processedSize = 0;
+
+                // Either process files sequentially or in parallel
+                if (job.Type == BackupType.Full && allFiles.Length > 100) // Example condition for parallel
                 {
-                    CurrentFile = Path.GetFileName(file),
-                    ProgressPercentage = (double)processedSize / totalSize * 100
-                });
-
-                // Process the file (copy it)
-                await TransferFile(file, destFile);
-
-                // Update progress
-                processedSize += fileInfo.Length;
-                progress?.Report(new BackupProgressReport
+                    await ProcessBackupJob(job, task, token);
+                }
+                else
                 {
-                    CurrentFile = Path.GetFileName(file),
-                    ProgressPercentage = (double)processedSize / totalSize * 100
-                });
+                    foreach (var file in allFiles)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        await task.WaitIfPaused(token);
+
+                        var fileInfo = new FileInfo(file);
+                        string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+
+                        progress?.Report(new BackupProgressReport
+                        {
+                            CurrentFile = Path.GetFileName(file),
+                            ProgressPercentage = (double)processedSize / totalSize * 100
+                        });
+
+                        await TransferFile(file, destFile, token);
+
+                        processedSize += fileInfo.Length;
+                        progress?.Report(new BackupProgressReport
+                        {
+                            CurrentFile = Path.GetFileName(file),
+                            ProgressPercentage = (double)processedSize / totalSize * 100
+                        });
+                    }
+                }
+
+                job.Status = "Completed";
+                job.LastRun = DateTime.Now;
+            }
+            catch (OperationCanceledException)
+            {
+                job.Status = "Cancelled";
+                throw;
+            }
+            catch (Exception)
+            {
+                job.Status = "Error";
+                throw;
+            }
+            finally
+            {
+                _activeTasks.TryRemove(job.Id, out _);
             }
         }
-
         private async Task ProcessBackupJob(BackupJob job, BackupTask task, CancellationToken ct)
         {
             var state = InitializeBackupState(job);
@@ -107,7 +142,7 @@ namespace BackupApp.Services
                 ct.ThrowIfCancellationRequested();
 
                 UpdateCurrentFileState(job, state, file, destFile);
-                await TransferFile(file, GetDestinationPath(file, job.SourcePath, job.TargetPath));
+                await TransferFile(file, destFile, ct);  // Using the passed ct parameter
                 UpdateProgressState(job, state, fileInfo.Length);
             }
             catch (OperationCanceledException)
@@ -129,21 +164,46 @@ namespace BackupApp.Services
         {
             return Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories);
         }
-        private async Task TransferFile(string sourcePath, string destinationPath)
+
+        private async Task TransferFile(string sourcePath, string destinationPath, CancellationToken cancellationToken)
         {
             // Create directory if it doesn't exist
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
 
-            using (var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read))
-            using (var destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+            try
             {
-                await sourceStream.CopyToAsync(destinationStream);
-            }
+                using var sourceStream = new FileStream(
+                    sourcePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    bufferSize: 81920,
+                    useAsync: true);
 
-            // Preserve original file timestamps
-            var fileInfo = new FileInfo(sourcePath);
-            File.SetLastWriteTime(destinationPath, fileInfo.LastWriteTime);
-            File.SetCreationTime(destinationPath, fileInfo.CreationTime);
+                using var destinationStream = new FileStream(
+                    destinationPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    bufferSize: 81920,
+                    useAsync: true);
+
+                await sourceStream.CopyToAsync(destinationStream, 81920, cancellationToken);
+
+                // Preserve original file timestamps
+                var fileInfo = new FileInfo(sourcePath);
+                File.SetLastWriteTime(destinationPath, fileInfo.LastWriteTime);
+                File.SetCreationTime(destinationPath, fileInfo.CreationTime);
+            }
+            catch (OperationCanceledException)
+            {
+                // Clean up partially copied file
+                if (File.Exists(destinationPath))
+                {
+                    try { File.Delete(destinationPath); } catch { }
+                }
+                throw;
+            }
         }
 
         public void PauseBackup(int jobId)
@@ -167,6 +227,7 @@ namespace BackupApp.Services
             if (_activeTasks.TryGetValue(jobId, out var task))
             {
                 task.Stop();
+                _activeTasks.TryRemove(jobId, out _);
             }
         }
 
@@ -504,39 +565,62 @@ namespace BackupApp.Services
 
     public class BackupTask
     {
-        private readonly SemaphoreSlim _pauseSemaphore = new(1, 1);
+        private readonly SemaphoreSlim _pauseLock = new(1, 1);
         private readonly CancellationTokenSource _cts = new();
-        private volatile TaskState _state = TaskState.Ready;
+        private volatile bool _isPaused;
+        private volatile bool _isStopped;
 
         public BackupJob Job { get; }
-        public double Progress { get; private set; }
-        public string CurrentFile { get; private set; }
+        public CancellationToken CancellationToken => _cts.Token;
 
         public BackupTask(BackupJob job)
         {
-            Job = job;
+            Job = job ?? throw new ArgumentNullException(nameof(job));
         }
 
         public async Task WaitIfPaused(CancellationToken ct)
         {
-            while (_state == TaskState.Paused)
+            if (_isPaused && !_isStopped)
             {
-                await Task.Delay(100, ct);
+                await _pauseLock.WaitAsync(ct);
+                _pauseLock.Release();
+                ct.ThrowIfCancellationRequested();
             }
-            ct.ThrowIfCancellationRequested();
         }
 
-        public void Pause() => ChangeState(TaskState.Paused);
-        public void Resume() => ChangeState(TaskState.Running);
-        public void Stop() => _cts.Cancel();
-
-        private void ChangeState(TaskState newState)
+        public void Pause()
         {
-            _state = newState;
-            Job.Status = newState.ToString();
+            if (!_isPaused && !_isStopped)
+            {
+                _isPaused = true;
+                _pauseLock.WaitAsync(); // This will block the task
+                Job.Status = "Paused";
+            }
         }
 
-        public enum TaskState { Ready, Running, Paused, Stopped }
+        public void Resume()
+        {
+            if (_isPaused && !_isStopped)
+            {
+                _isPaused = false;
+                _pauseLock.Release();
+                Job.Status = "Running";
+            }
+        }
+
+        public void Stop()
+        {
+            if (!_isStopped)
+            {
+                _isStopped = true;
+                _isPaused = false;
+                _cts.Cancel();
+                try { _pauseLock.Release(); } catch { } // Unblock if paused
+                Job.Status = "Stopped";
+            }
+        }
+
+    public enum TaskState { Ready, Running, Paused, Stopped }
     }
 
     public class PriorityFileQueue
