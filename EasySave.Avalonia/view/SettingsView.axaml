@@ -1,7 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:BackupApp.ViewModels"
-             xmlns:global="clr-namespace:"
              x:Class="BackupApp.Avalonia.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
 	<ScrollViewer>
@@ -27,6 +26,99 @@
 					<RadioButton GroupName="LogFormat"
                                  Content="XML Format"
                                  IsChecked="{Binding IsXmlLogFormat}"/>
+				</StackPanel>
+			</Border>
+
+			<!-- Encryption Settings -->
+			<Border BorderBrush="#e74c3c" BorderThickness="1" CornerRadius="4" Padding="10">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Encryption Settings" FontSize="16" FontWeight="Bold" Foreground="#e74c3c"/>
+
+					<!-- Enable Encryption -->
+					<CheckBox Content="Enable Encryption"
+                              IsChecked="{Binding IsEncryptionEnabled}"
+                              FontWeight="SemiBold"/>
+
+					<!-- Encryption Configuration (visible only when enabled) -->
+					<StackPanel IsVisible="{Binding IsEncryptionEnabled}" Spacing="10">
+						<!-- Note: CryptoSoft Path section supprimé car utilisation de référence directe -->
+
+						<!-- Default Encryption Key -->
+						<StackPanel Spacing="5">
+							<TextBlock Text="Default Encryption Key:" FontWeight="SemiBold"/>
+							<TextBox Text="{Binding DefaultEncryptionKey}"
+                                     Watermark="Enter default encryption key"
+                                     PasswordChar="*"
+                                     UseFloatingWatermark="True"/>
+							<TextBlock Text="This key will be used when no specific key is provided for a backup job"
+                                       FontSize="11" Foreground="#7f8c8d"/>
+						</StackPanel>
+
+						<!-- File Extensions for Encryption -->
+						<StackPanel Spacing="5">
+							<TextBlock Text="File Extensions to Encrypt:" FontWeight="SemiBold"/>
+							<TextBlock Text="Files with these extensions will be automatically encrypted during backup"
+                                       FontSize="11" Foreground="#7f8c8d"/>
+
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="*"/>
+									<ColumnDefinition Width="Auto"/>
+								</Grid.ColumnDefinitions>
+								<TextBox Grid.Column="0"
+                                         Text="{Binding NewEncryptionExtension}"
+                                         Watermark="Enter extension (e.g., .docx, .pdf)"/>
+								<Button Grid.Column="1"
+                                        Content="Add"
+                                        Command="{Binding AddEncryptionExtensionCommand}"
+                                        Margin="5,0,0,0"
+                                        Width="60"/>
+							</Grid>
+
+							<ListBox ItemsSource="{Binding EncryptionExtensions}"
+                                     Height="120"
+                                     BorderBrush="#bdc3c7"
+                                     BorderThickness="1">
+								<ListBox.ItemTemplate>
+									<DataTemplate>
+										<Grid Margin="5">
+											<Grid.ColumnDefinitions>
+												<ColumnDefinition Width="*"/>
+												<ColumnDefinition Width="Auto"/>
+											</Grid.ColumnDefinitions>
+											<TextBlock Text="{Binding}"
+                                                       VerticalAlignment="Center"
+                                                       FontFamily="Consolas"/>
+											<Button Grid.Column="1"
+                                                    Content="×"
+                                                    Command="{Binding $parent[ItemsControl].DataContext.RemoveEncryptionExtensionCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Width="25" Height="25"
+                                                    FontSize="12"
+                                                    Background="#e74c3c"
+                                                    Foreground="White"
+                                                    CornerRadius="12"/>
+										</Grid>
+									</DataTemplate>
+								</ListBox.ItemTemplate>
+							</ListBox>
+						</StackPanel>
+
+						<!-- Test Encryption -->
+						<StackPanel Spacing="5">
+							<TextBlock Text="Test Encryption:" FontWeight="SemiBold"/>
+							<TextBlock Text="CryptoSoft library will be used directly (no external executable required)"
+                                       FontSize="11" Foreground="#27ae60" FontStyle="Italic"/>
+							<Button Content="Test Encryption Configuration"
+                                    Command="{Binding TestEncryptionCommand}"
+                                    HorizontalAlignment="Left"
+                                    Background="#27ae60"
+                                    Foreground="White"/>
+							<TextBlock Text="{Binding EncryptionTestResult}"
+                                       FontSize="11"
+                                       Foreground="{Binding EncryptionTestResultColor}"/>
+						</StackPanel>
+					</StackPanel>
 				</StackPanel>
 			</Border>
 
@@ -72,53 +164,13 @@
 				</StackPanel>
 			</Border>
 
-			<!-- Encrypted Extensions -->
-			<Border BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="4" Padding="10">
-				<StackPanel Spacing="10">
-					<TextBlock Text="Encrypted File Extensions" FontSize="16" FontWeight="Bold"/>
-					<TextBlock Text="These extensions will be encrypted during backup:" FontSize="12"/>
-
-					<Grid>
-						<Grid.ColumnDefinitions>
-							<ColumnDefinition Width="*"/>
-							<ColumnDefinition Width="Auto"/>
-						</Grid.ColumnDefinitions>
-						<TextBox Grid.Column="0"
-                                 Text="{Binding NewEncryptedExtension}"
-                                 Watermark="Enter extension (e.g., .pdf)"/>
-						<Button Grid.Column="1"
-                                Content="Add"
-                                Command="{Binding AddEncryptedExtensionCommand}"
-                                Margin="5,0,0,0"/>
-					</Grid>
-
-					<ListBox ItemsSource="{Binding EncryptedExtensions}"
-                             Height="150">
-						<ListBox.ItemTemplate>
-							<DataTemplate>
-								<Grid>
-									<Grid.ColumnDefinitions>
-										<ColumnDefinition Width="*"/>
-										<ColumnDefinition Width="Auto"/>
-									</Grid.ColumnDefinitions>
-									<TextBlock Text="{Binding}" VerticalAlignment="Center"/>
-									<Button Grid.Column="1"
-                                            Content="Remove"
-                                            Command="{Binding $parent[ItemsControl].DataContext.RemoveEncryptedExtensionCommand}"
-                                            CommandParameter="{Binding}"
-                                            Margin="5,0,0,0"/>
-								</Grid>
-							</DataTemplate>
-						</ListBox.ItemTemplate>
-					</ListBox>
-				</StackPanel>
-			</Border>
-
 			<!-- Save Button -->
 			<Button Content="Save Settings"
                     HorizontalAlignment="Right"
                     Command="{Binding SaveSettingsCommand}"
-                    Width="120"/>
+                    Width="120"
+                    Background="#3498db"
+                    Foreground="White"/>
 		</StackPanel>
 	</ScrollViewer>
 </UserControl>

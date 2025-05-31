@@ -1,27 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <!-- Publish options -->
-        <PublishSingleFile>true</PublishSingleFile>
-        <SelfContained>true</SelfContained>
-        <PublishTrimmed>true</PublishTrimmed>
-        <!-- Branding -->
-        <Authors>ProSoft</Authors>
-        <Company>ProSoft</Company>
-        <Product>CryptoSoft</Product>
-        <Copyright>Copyright © 2025 ProSoft</Copyright>
-        <NeutralLanguage>en-US</NeutralLanguage>
-        <AssemblyTitle>CryptoSoft</AssemblyTitle>
-        <AssemblyDescription>Encrypt given files</AssemblyDescription>
-        <AssemblyCompany>ProSoft</AssemblyCompany>
-        <AssemblyProduct>CryptoSoft</AssemblyProduct>
-        <AssemblyCopyright>Copyright © 2025 ProSoft</AssemblyCopyright>
-        <PublishAot>False</PublishAot>
-        <SignAssembly>False</SignAssembly>
-    </PropertyGroup>
-
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<!-- Publish options -->
+		<SelfContained>false</SelfContained>
+		<PublishSingleFile>false</PublishSingleFile>
+		<PublishTrimmed>true</PublishTrimmed>
+		<!-- Branding -->
+		<Authors>ProSoft</Authors>
+		<Company>ProSoft</Company>
+		<Product>CryptoSoft</Product>
+		<Copyright>Copyright © 2025 ProSoft</Copyright>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<AssemblyTitle>CryptoSoft</AssemblyTitle>
+		<AssemblyDescription>Encrypt given files</AssemblyDescription>
+		<AssemblyCompany>ProSoft</AssemblyCompany>
+		<AssemblyProduct>CryptoSoft</AssemblyProduct>
+		<AssemblyCopyright>Copyright © 2025 ProSoft</AssemblyCopyright>
+		<PublishAot>False</PublishAot>
+		<SignAssembly>False</SignAssembly>
+	</PropertyGroup>
+	<!-- Copie automatique vers EasySave-V1 après le build -->
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="if not exist &quot;$(SolutionDir)EasySave-V1\bin\$(Configuration)\$(TargetFramework)\&quot; mkdir &quot;$(SolutionDir)EasySave-V1\bin\$(Configuration)\$(TargetFramework)\&quot;" />
+		<Exec Command="copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)EasySave-V1\bin\$(Configuration)\$(TargetFramework)\&quot;" />
+	</Target>
 </Project>

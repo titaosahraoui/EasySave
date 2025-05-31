@@ -11,15 +11,62 @@ namespace BackupApp.Services
         private readonly LanguageService _languageService;
         private readonly ILogger _logger;
         private readonly IStateManager _stateManager;
+        private readonly ICryptoService _cryptoService;
+        private readonly CryptoConfig _cryptoConfig;
 
-        public BackupService(LogFormat logFormat = LogFormat.Json)
+        public BackupService(LogFormat logFormat = LogFormat.Json, CryptoConfig cryptoConfig = null)
         {
             _languageService = new LanguageService();
             _logger = logFormat == LogFormat.Json ? new FileLogger() : new XmlFileLogger();
             _stateManager = new FileStateManager();
+            _cryptoConfig = cryptoConfig ?? new CryptoConfig();
+            _cryptoService = new CryptoService(_logger, _cryptoConfig);
         }
 
-        public void PerformBackup(BackupJob job)
+        // Méthode modifiée pour le cryptage après copie
+        private async Task<bool> CopyAndEncryptFileAsync(BackupJob job, string sourceFile, string destFile)
+        {
+            try
+            {
+                // Copier le fichier
+                var fileStopwatch = Stopwatch.StartNew();
+                File.Copy(sourceFile, destFile, true);
+                fileStopwatch.Stop();
+
+                long fileSize = new FileInfo(sourceFile).Length;
+                _logger.LogFileTransfer(job.Name, sourceFile, destFile, fileSize, fileStopwatch.ElapsedMilliseconds, true);
+
+                // Crypter le fichier si nécessaire
+                if (job.EnableEncryption && _cryptoService.ShouldEncryptFile(destFile, _cryptoConfig))
+                {
+                    string encryptionKey = !string.IsNullOrEmpty(job.EncryptionKey)
+                        ? job.EncryptionKey
+                        : _cryptoConfig.EncryptionKey;
+
+                    if (string.IsNullOrEmpty(encryptionKey))
+                    {
+                        _logger.LogError(job.Name, $"No encryption key provided for file: {destFile}");
+                        return false;
+                    }
+
+                    bool encryptionSuccess = await _cryptoService.EncryptFileAsync(destFile, encryptionKey);
+                    if (!encryptionSuccess)
+                    {
+                        _logger.LogError(job.Name, $"Failed to encrypt file: {destFile}");
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(job.Name, $"Failed to copy/encrypt file {sourceFile}: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task PerformBackup(BackupJob job)
         {
             if (job == null)
             {
@@ -40,11 +87,10 @@ namespace BackupApp.Services
 
             try
             {
-                // Log backup start
                 Console.WriteLine($"{_languageService.GetString("StartingBackup")} {job.Name} ({job.Type})");
                 _logger.LogFileTransfer(job.Name, job.SourcePath, job.TargetPath, 0, 0, true);
 
-                // Validate paths
+                // Validation des chemins
                 if (!Directory.Exists(job.SourcePath))
                 {
                     string error = $"{_languageService.GetString("SourceNotFound")}: {job.SourcePath}";
@@ -55,7 +101,7 @@ namespace BackupApp.Services
                     return;
                 }
 
-                // Ensure target directory exists
+                // Créer le répertoire cible si nécessaire
                 if (!Directory.Exists(job.TargetPath))
                 {
                     try
@@ -75,7 +121,7 @@ namespace BackupApp.Services
                     }
                 }
 
-                // Get files and update state
+                // Obtenir les fichiers et mettre à jour l'état
                 var allFiles = Directory.GetFiles(job.SourcePath, "*", SearchOption.AllDirectories);
                 state.TotalFiles = allFiles.Length;
                 state.TotalSizeBytes = CalculateTotalSize(allFiles);
@@ -83,23 +129,22 @@ namespace BackupApp.Services
                 state.SizeRemainingBytes = state.TotalSizeBytes;
                 _stateManager.UpdateState(job.Name, state);
 
-                // Execute backup based on type
+                // Exécuter la sauvegarde selon le type
                 var stopwatch = Stopwatch.StartNew();
                 if (job.Type == BackupType.Full)
                 {
-                    ExecuteFullBackup(job, state, allFiles);
+                    await ExecuteFullBackupAsync(job, state, allFiles);
                 }
                 else
                 {
-                    ExecuteDifferentialBackup(job, state, allFiles);
+                    await ExecuteDifferentialBackupAsync(job, state, allFiles);
                 }
                 stopwatch.Stop();
 
-                // Finalize backup
+                // Finaliser la sauvegarde
                 job.LastRun = DateTime.Now;
                 state.Status = "Completed";
                 state.LastActionTimestamp = DateTime.Now;
-
                 _stateManager.UpdateState(job.Name, state);
 
                 Console.WriteLine($"{_languageService.GetString("BackupComplete")} {job.Name}");
@@ -115,31 +160,23 @@ namespace BackupApp.Services
                 _logger.LogError(job.Name, error);
             }
         }
-        private void ExecuteFullBackup(BackupJob job, BackupState state, string[] allFiles)
+        private async Task ExecuteFullBackupAsync(BackupJob job, BackupState state, string[] allFiles)
         {
             foreach (var file in allFiles)
             {
-                try
+                string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+                UpdateCurrentFileState(job, state, file, destFile);
+
+                bool success = await CopyAndEncryptFileAsync(job, file, destFile);
+                if (success)
                 {
-                    string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
-                    UpdateCurrentFileState(job, state, file, destFile);
-
-                    var fileStopwatch = Stopwatch.StartNew();
-                    File.Copy(file, destFile, true);
-                    fileStopwatch.Stop();
-
                     long fileSize = new FileInfo(file).Length;
-                    _logger.LogFileTransfer(job.Name, file, destFile, fileSize, fileStopwatch.ElapsedMilliseconds, true);
                     UpdateProgressState(job, state, fileSize);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(job.Name, $"{_languageService.GetString("FileCopyError")} {file}: {ex.Message}");
                 }
             }
         }
 
-        private void ExecuteDifferentialBackup(BackupJob job, BackupState state, string[] allFiles)
+        private async Task ExecuteDifferentialBackupAsync(BackupJob job, BackupState state, string[] allFiles)
         {
             DateTime? lastBackupTime = GetLastBackupTime(job.TargetPath);
 
@@ -155,19 +192,11 @@ namespace BackupApp.Services
                     continue;
                 }
 
-                try
+                bool success = await CopyAndEncryptFileAsync(job, file, destFile);
+                if (success)
                 {
-                    var fileStopwatch = Stopwatch.StartNew();
-                    File.Copy(file, destFile, true);
-                    fileStopwatch.Stop();
-
                     long fileSize = new FileInfo(file).Length;
-                    _logger.LogFileTransfer(job.Name, file, destFile, fileSize, fileStopwatch.ElapsedMilliseconds, true);
                     UpdateProgressState(job, state, fileSize);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(job.Name, $"{_languageService.GetString("FileCopyError")} {file}: {ex.Message}");
                 }
             }
         }
