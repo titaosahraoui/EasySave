@@ -103,5 +103,15 @@ namespace BackupApp.Logging
 
             return logs;
         }
+
+        public void LogInfo(string v1, string v2)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LogWarning(string v1, string v2)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

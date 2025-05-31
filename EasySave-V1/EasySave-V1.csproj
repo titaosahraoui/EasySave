@@ -1,42 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>EasySave_V1</RootNamespace>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.0" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
-    <PackageReference Include="MessageBox.Avalonia" Version="3.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="ReactiveUI" Version="20.2.45" />
-    <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\BackupApp.Logging\BackupApp.Logging.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="REAALESE_NOTE_V1.0.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>REAALESE_NOTE_V1.0.txt</LastGenOutput>
-    </None>
-    <None Update="REAALESE_NOTE_V1.0.txt">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>REAALESE_NOTE_V1.0.tt</DependentUpon>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<RootNamespace>EasySave_V1</RootNamespace>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia" Version="11.3.0" />
+		<PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
+		<PackageReference Include="MessageBox.Avalonia" Version="3.2.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="ReactiveUI" Version="20.2.45" />
+		<PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
+		<PackageReference Include="System.Reactive" Version="6.0.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\BackupApp.Logging\BackupApp.Logging.csproj" />
+		<ProjectReference Include="..\CryptoSoft\CryptoSoft.csproj" />
+	</ItemGroup>
+	<!-- Suppression de l'ancienne méthode de copie manuelle -->
+	<!-- L'exécutable sera automatiquement copié par le PostBuild de CryptoSoft -->
+	<ItemGroup>
+		<None Update="REAALESE_NOTE_V1.0.tt">
+			<Generator>TextTemplatingFileGenerator</Generator>
+			<LastGenOutput>REAALESE_NOTE_V1.0.txt</LastGenOutput>
+		</None>
+		<None Update="REAALESE_NOTE_V1.0.txt">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>REAALESE_NOTE_V1.0.tt</DependentUpon>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+	</ItemGroup>
 </Project>

@@ -1,7 +1,9 @@
-﻿using BackupApp.Logging;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using BackupApp.Logging;
+using BackupApp.Models;
 
 namespace BackupApp
 {
@@ -12,10 +14,10 @@ namespace BackupApp
         public List<string> PriorityExtensions { get; set; } = new List<string>();
         public List<string> EncryptedExtensions { get; set; } = new List<string>();
 
-        private static readonly string ConfigPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "EasySave",
-            "config.json");
+        // Encryption settings
+        public CryptoSettings Encryption { get; set; } = new CryptoSettings();
+
+        private static string ConfigPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.config");
 
         public static AppConfig Load()
         {
@@ -23,11 +25,20 @@ namespace BackupApp
             {
                 if (File.Exists(ConfigPath))
                 {
-                    string json = File.ReadAllText(ConfigPath);
-                    return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+                    var json = File.ReadAllText(ConfigPath);
+                    var config = JsonSerializer.Deserialize<AppConfig>(json);
+
+                    // Ensure encryption settings are initialized
+                    config.Encryption ??= new CryptoSettings();
+
+                    return config;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load configuration: {ex.Message}");
+            }
+
             return new AppConfig();
         }
 
@@ -35,15 +46,44 @@ namespace BackupApp
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
-                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions
+                var options = new JsonSerializerOptions
                 {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
+                    WriteIndented = true
+                };
+
+                var json = JsonSerializer.Serialize(this, options);
                 File.WriteAllText(ConfigPath, json);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to save configuration: {ex.Message}", ex);
+            }
         }
+
+        public CryptoConfig GetCryptoConfig()
+        {
+            return new CryptoConfig
+            {
+                IsEnabled = Encryption.IsEnabled,
+                EncryptionKey = Encryption.DefaultEncryptionKey,
+                FileExtensions = new System.Collections.ObjectModel.ObservableCollection<string>(Encryption.FileExtensions)
+            };
+        }
+
+        public void UpdateFromCryptoConfig(CryptoConfig cryptoConfig)
+        {
+            Encryption.IsEnabled = cryptoConfig.IsEnabled;
+            Encryption.DefaultEncryptionKey = cryptoConfig.EncryptionKey;
+            Encryption.FileExtensions = new List<string>(cryptoConfig.FileExtensions);
+        }
+    }
+
+    public class CryptoSettings
+    {
+        public bool IsEnabled { get; set; } = false;
+        public string CryptoSoftPath { get; set; } = string.Empty;
+        public string DefaultEncryptionKey { get; set; } = string.Empty;
+        public List<string> FileExtensions { get; set; } = new List<string>();
+        public string EncryptionKey { get; set; }
     }
 }
