@@ -83,6 +83,12 @@ namespace BackupApp.ViewModels
             get => _defaultEncryptionKey;
             set => SetProperty(ref _defaultEncryptionKey, value);
         }
+        private string _encryptionKey = string.Empty;
+        public string EncryptionKey
+        {
+            get => _encryptionKey;
+            set => SetProperty(ref _encryptionKey, value);
+        }
 
         public string EncryptionTestResult
         {
@@ -95,6 +101,7 @@ namespace BackupApp.ViewModels
             get => _encryptionTestResultColor;
             set => SetProperty(ref _encryptionTestResultColor, value);
         }
+
 
         public ICommand AddPriorityExtensionCommand { get; }
         public ICommand RemovePriorityExtensionCommand { get; }
@@ -133,7 +140,7 @@ namespace BackupApp.ViewModels
         {
             // Load from existing config
             IsEncryptionEnabled = _config.Encryption.IsEnabled;
-            DefaultEncryptionKey = _config.Encryption.EncryptionKey; // Fixed: use EncryptionKey instead of DefaultEncryptionKey
+            EncryptionKey = _config.Encryption.EncryptionKey; // Fixed: use EncryptionKey instead of DefaultEncryptionKey
 
             // Load existing extensions
             EncryptionExtensions.Clear();
@@ -284,13 +291,16 @@ namespace BackupApp.ViewModels
                 _config.DefaultLanguage = SelectedLanguage;
                 _config.DefaultLogFormat = IsJsonLogFormat ? LogFormat.Json : LogFormat.Xml;
 
+                var languageService = new LanguageService();
+                languageService.SetLanguage(SelectedLanguage);
+
                 // Update extensions lists
                 _config.PriorityExtensions.Clear();
                 _config.PriorityExtensions.AddRange(PriorityExtensions);
 
                 // Update crypto settings in AppConfig
                 _config.Encryption.IsEnabled = IsEncryptionEnabled;
-                _config.Encryption.EncryptionKey = DefaultEncryptionKey; // Fixed: use EncryptionKey instead of DefaultEncryptionKey
+                _config.Encryption.EncryptionKey = EncryptionKey; // Fixed: use EncryptionKey instead of DefaultEncryptionKey
                 _config.Encryption.FileExtensions.Clear();
                 foreach (var ext in EncryptionExtensions) // Fixed: iterate through ObservableCollection
                 {

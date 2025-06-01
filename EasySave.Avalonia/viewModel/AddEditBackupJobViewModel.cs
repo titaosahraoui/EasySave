@@ -15,6 +15,7 @@ namespace BackupApp.ViewModels
     {
         private readonly Window _window;
         private readonly BackupRepository _repository;
+        private readonly BackupViewModel _backupViewModel;
         private BackupJob _currentJob = new();
 
         public string WindowTitle => CurrentJob.Id == 0 ? "Add Backup Job" : "Edit Backup Job";
@@ -40,6 +41,7 @@ namespace BackupApp.ViewModels
         {
             _window = window;
             _repository = new BackupRepository();
+            _backupViewModel = new BackupViewModel();
 
             if (existingJob != null)
             {
@@ -152,7 +154,7 @@ namespace BackupApp.ViewModels
                     _repository.UpdateBackupJob(CurrentJob);
                     ShowAlert("Backup job updated successfully");
                 }
-
+               
                 _window.Close(CurrentJob);
             }
             catch (Exception ex)

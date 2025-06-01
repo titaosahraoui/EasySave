@@ -1,81 +1,157 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using BackupApp.Models;
 using BackupApp.Logging;
+using BackupApp.services;
 
 namespace BackupApp.Services
 {
-    public class BackupService
+    public class BackupService : IBackupService
     {
         private readonly LanguageService _languageService;
         private readonly ILogger _logger;
         private readonly IStateManager _stateManager;
         private readonly ICryptoService _cryptoService;
         private readonly CryptoConfig _cryptoConfig;
+        private readonly ConcurrentDictionary<int, BackupTask> _activeTasks = new();
+        private readonly PriorityFileQueue _priorityQueue = new();
+        private readonly SemaphoreSlim _largeFileSemaphore = new(1, 1);
+        private readonly BusinessSoftwareMonitor _softwareMonitor;
+        private int _maxParallelFileSizeKB = 1024; // Configurable
 
-        public BackupService(LogFormat logFormat = LogFormat.Json, CryptoConfig cryptoConfig = null)
+        public BackupService(BusinessSoftwareMonitor softwareMonitor, LogFormat logFormat = LogFormat.Json, CryptoConfig cryptoConfig = null)
         {
             _languageService = new LanguageService();
             _logger = logFormat == LogFormat.Json ? new FileLogger() : new XmlFileLogger();
             _stateManager = new FileStateManager();
             _cryptoConfig = cryptoConfig ?? new CryptoConfig();
             _cryptoService = new CryptoService(_logger, _cryptoConfig);
+            _softwareMonitor = softwareMonitor;
+
+            var priorityExtensions = AppConfig.Load().PriorityExtensions;
+            _priorityQueue.SetPriorityExtensions(priorityExtensions);
+
+            _softwareMonitor.SoftwareRunningChanged += (isRunning) =>
+            {
+                foreach (var task in _activeTasks.Values)
+                {
+                    if (isRunning) task.Pause();
+                    else task.Resume();
+                }
+            };
         }
 
-        // Méthode modifiée pour le cryptage après copie
-        private async Task<bool> CopyAndEncryptFileAsync(BackupJob job, string sourceFile, string destFile)
+        public async Task PerformBackupAsync(BackupJob job, IProgress<BackupProgressReport> progress, CancellationToken externalToken)
         {
+            if (job == null) throw new ArgumentNullException(nameof(job));
+
+            var task = new BackupTask(job);
+            if (!_activeTasks.TryAdd(job.Id, task))
+            {
+                throw new InvalidOperationException($"A backup task for job {job.Id} already exists");
+            }
+
             try
             {
-                // Copier le fichier
-                var fileStopwatch = Stopwatch.StartNew();
-                File.Copy(sourceFile, destFile, true);
-                fileStopwatch.Stop();
+                // Create linked token source
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalToken, task.CancellationToken);
+                var token = linkedCts.Token;
 
-                long fileSize = new FileInfo(sourceFile).Length;
-                _logger.LogFileTransfer(job.Name, sourceFile, destFile, fileSize, fileStopwatch.ElapsedMilliseconds, true);
+                var allFiles = Directory.GetFiles(job.SourcePath, "*", SearchOption.AllDirectories);
+                long totalSize = CalculateTotalSize(allFiles);
+                long processedSize = 0;
 
-                // Crypter le fichier si nécessaire
-                if (job.EnableEncryption && _cryptoService.ShouldEncryptFile(destFile, _cryptoConfig))
+                // Initialize backup state
+                var state = new BackupState
                 {
-                    string encryptionKey = !string.IsNullOrEmpty(job.EncryptionKey)
-                        ? job.EncryptionKey
-                        : _cryptoConfig.EncryptionKey;
+                    BackupName = job.Name,
+                    Status = "Active",
+                    LastActionTimestamp = DateTime.Now,
+                    CurrentSourceFile = string.Empty,
+                    CurrentDestFile = string.Empty,
+                    TotalFiles = allFiles.Length,
+                    TotalSizeBytes = totalSize,
+                    FilesRemaining = allFiles.Length,
+                    SizeRemainingBytes = totalSize
+                };
+                _stateManager.UpdateState(job.Name, state);
 
-                    if (string.IsNullOrEmpty(encryptionKey))
-                    {
-                        _logger.LogError(job.Name, $"No encryption key provided for file: {destFile}");
-                        return false;
-                    }
+                // Either process files sequentially or in parallel
+                if (job.Type == BackupType.Full && allFiles.Length > 100) // Example condition for parallel
+                {
+                    await ProcessBackupJob(job, task, token, progress, totalSize);
+                }
+                else
+                {
+                    DateTime? lastBackupTime = job.Type == BackupType.Differential ? GetLastBackupTime(job.TargetPath) : null;
 
-                    bool encryptionSuccess = await _cryptoService.EncryptFileAsync(destFile, encryptionKey);
-                    if (!encryptionSuccess)
+                    foreach (var file in allFiles)
                     {
-                        _logger.LogError(job.Name, $"Failed to encrypt file: {destFile}");
-                        return false;
+                        token.ThrowIfCancellationRequested();
+                        await task.WaitIfPaused(token);
+
+                        string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+
+                        // Differential backup check
+                        if (job.Type == BackupType.Differential && ShouldSkipFile(file, destFile, lastBackupTime))
+                        {
+                            state.FilesProcessed++;
+                            state.FilesRemaining--;
+                            continue;
+                        }
+
+                        var fileInfo = new FileInfo(file);
+
+                        progress?.Report(new BackupProgressReport
+                        {
+                            CurrentFile = Path.GetFileName(file),
+                            ProgressPercentage = (double)processedSize / totalSize * 100
+                        });
+
+                        UpdateCurrentFileState(job, state, file, destFile);
+                        await TransferFile(job, file, destFile, token);
+                        UpdateProgressState(job, state, fileInfo.Length);
+
+                        processedSize += fileInfo.Length;
+                        progress?.Report(new BackupProgressReport
+                        {
+                            CurrentFile = Path.GetFileName(file),
+                            ProgressPercentage = (double)processedSize / totalSize * 100
+                        });
                     }
                 }
 
-                return true;
+                job.Status = "Completed";
+                job.LastRun = DateTime.Now;
+                state.Status = "Completed";
+                state.LastActionTimestamp = DateTime.Now;
+                _stateManager.UpdateState(job.Name, state);
+            }
+            catch (OperationCanceledException)
+            {
+                job.Status = "Cancelled";
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(job.Name, $"Failed to copy/encrypt file {sourceFile}: {ex.Message}");
-                return false;
+                job.Status = "Error";
+                _logger.LogError(job.Name, $"{_languageService.GetString("BackupError")}: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                _activeTasks.TryRemove(job.Id, out _);
             }
         }
 
-        public async Task PerformBackup(BackupJob job)
+        private async Task ProcessBackupJob(BackupJob job, BackupTask task, CancellationToken ct, IProgress<BackupProgressReport> progress, long totalSize)
         {
-            if (job == null)
-            {
-                string nullError = _languageService.GetString("JobNullError");
-                Console.WriteLine(nullError);
-                _logger.LogError("System", nullError);
-                return;
-            }
-
             var state = new BackupState
             {
                 BackupName = job.Name,
@@ -85,120 +161,186 @@ namespace BackupApp.Services
                 CurrentDestFile = string.Empty
             };
 
-            try
-            {
-                Console.WriteLine($"{_languageService.GetString("StartingBackup")} {job.Name} ({job.Type})");
-                _logger.LogFileTransfer(job.Name, job.SourcePath, job.TargetPath, 0, 0, true);
+            var files = GetFilesToBackup(job.SourcePath);
+            DateTime? lastBackupTime = job.Type == BackupType.Differential ? GetLastBackupTime(job.TargetPath) : null;
 
-                // Validation des chemins
-                if (!Directory.Exists(job.SourcePath))
+            // Create counters for thread-safe progress tracking
+            long processedFiles = 0;
+            long processedSize = 0;
+
+            var parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount,
+                CancellationToken = ct
+            };
+
+            await Parallel.ForEachAsync(files, parallelOptions, async (file, innerCt) =>
+            {
+                var fileInfo = new FileInfo(file);
+                string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+
+                // Differential backup check
+                if (job.Type == BackupType.Differential && ShouldSkipFile(file, destFile, lastBackupTime))
                 {
-                    string error = $"{_languageService.GetString("SourceNotFound")}: {job.SourcePath}";
-                    Console.WriteLine(error);
-                    _logger.LogError(job.Name, error);
-                    state.Status = "Error";
-                    _stateManager.UpdateState(job.Name, state);
+                    // Thread-safe increment
+                    Interlocked.Increment(ref processedFiles);
                     return;
                 }
 
-                // Créer le répertoire cible si nécessaire
-                if (!Directory.Exists(job.TargetPath))
+                progress?.Report(new BackupProgressReport
                 {
-                    try
-                    {
-                        Directory.CreateDirectory(job.TargetPath);
-                        _logger.LogDirectoryCreation(job.Name, job.TargetPath);
-                        Console.WriteLine($"{_languageService.GetString("CreatedDirectory")}: {job.TargetPath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        string error = $"{_languageService.GetString("DirCreateError")}: {job.TargetPath} - {ex.Message}";
-                        Console.WriteLine(error);
-                        _logger.LogError(job.Name, error);
-                        state.Status = "Error";
-                        _stateManager.UpdateState(job.Name, state);
-                        return;
-                    }
+                    CurrentFile = Path.GetFileName(file),
+                    ProgressPercentage = (double)Interlocked.Read(ref processedSize) / totalSize * 100
+                });
+
+                await ProcessFile(job, file, task, state, innerCt, () =>
+                {
+                    // Update state after file processing
+                    state.FilesProcessed = (int)Interlocked.Increment(ref processedFiles);
+                    state.FilesRemaining = files.Length - state.FilesProcessed;
+                    state.SizeRemainingBytes = totalSize - Interlocked.Add(ref processedSize, fileInfo.Length);
+                    _stateManager.UpdateState(job.Name, state);
+                });
+
+                progress?.Report(new BackupProgressReport
+                {
+                    CurrentFile = Path.GetFileName(file),
+                    ProgressPercentage = (double)Interlocked.Read(ref processedSize) / totalSize * 100
+                });
+            });
+
+            FinalizeBackup(job, state, true);
+        }
+
+        private async Task ProcessFile(BackupJob job, string file, BackupTask task, BackupState state, CancellationToken ct, Action updateState)
+        {
+            var fileInfo = new FileInfo(file);
+            bool isLargeFile = fileInfo.Length > _maxParallelFileSizeKB * 1024;
+            string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
+
+            try
+            {
+                if (isLargeFile) await _largeFileSemaphore.WaitAsync(ct);
+                if (_priorityQueue.HasPriorityFiles() && !_priorityQueue.IsPriorityFile(file))
+                {
+                    await _priorityQueue.WaitForPriorityFiles(ct);
                 }
 
-                // Obtenir les fichiers et mettre à jour l'état
-                var allFiles = Directory.GetFiles(job.SourcePath, "*", SearchOption.AllDirectories);
-                state.TotalFiles = allFiles.Length;
-                state.TotalSizeBytes = CalculateTotalSize(allFiles);
-                state.FilesRemaining = state.TotalFiles;
-                state.SizeRemainingBytes = state.TotalSizeBytes;
-                _stateManager.UpdateState(job.Name, state);
+                await task.WaitIfPaused(ct);
+                ct.ThrowIfCancellationRequested();
 
-                // Exécuter la sauvegarde selon le type
-                var stopwatch = Stopwatch.StartNew();
-                if (job.Type == BackupType.Full)
-                {
-                    await ExecuteFullBackupAsync(job, state, allFiles);
-                }
-                else
-                {
-                    await ExecuteDifferentialBackupAsync(job, state, allFiles);
-                }
-                stopwatch.Stop();
+                UpdateCurrentFileState(job, state, file, destFile);
+                await TransferFile(job, file, destFile, ct);
 
-                // Finaliser la sauvegarde
-                job.LastRun = DateTime.Now;
-                state.Status = "Completed";
-                state.LastActionTimestamp = DateTime.Now;
-                _stateManager.UpdateState(job.Name, state);
-
-                Console.WriteLine($"{_languageService.GetString("BackupComplete")} {job.Name}");
-                Console.WriteLine($"{_languageService.GetString("BackupStats")} {state.TotalFiles} files, {FormatSize(state.TotalSizeBytes)}, {stopwatch.Elapsed.TotalSeconds:0.00}s");
+                // Call the state update callback
+                updateState?.Invoke();
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning(job.Name, $"Backup was cancelled during file transfer: {file}");
+                throw;
             }
             catch (Exception ex)
             {
-                state.Status = "Error";
-                _stateManager.UpdateState(job.Name, state);
-
-                string error = $"{_languageService.GetString("BackupError")} {job.Name}: {ex.Message}";
-                Console.WriteLine(error);
-                _logger.LogError(job.Name, error);
+                _logger.LogError(job.Name, $"{_languageService.GetString("FileCopyError")} {file}: {ex.Message}");
             }
-        }
-        private async Task ExecuteFullBackupAsync(BackupJob job, BackupState state, string[] allFiles)
-        {
-            foreach (var file in allFiles)
+            finally
             {
-                string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
-                UpdateCurrentFileState(job, state, file, destFile);
-
-                bool success = await CopyAndEncryptFileAsync(job, file, destFile);
-                if (success)
-                {
-                    long fileSize = new FileInfo(file).Length;
-                    UpdateProgressState(job, state, fileSize);
-                }
+                if (isLargeFile) _largeFileSemaphore.Release();
             }
         }
 
-        private async Task ExecuteDifferentialBackupAsync(BackupJob job, BackupState state, string[] allFiles)
+        private async Task TransferFile(BackupJob job, string sourcePath, string destinationPath, CancellationToken cancellationToken)
         {
-            DateTime? lastBackupTime = GetLastBackupTime(job.TargetPath);
+            // Create directory if it doesn't exist
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
 
-            foreach (var file in allFiles)
+            try
             {
-                string destFile = GetDestinationPath(file, job.SourcePath, job.TargetPath);
-                UpdateCurrentFileState(job, state, file, destFile);
+                using var sourceStream = new FileStream(
+                    sourcePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    bufferSize: 81920,
+                    useAsync: true);
 
-                if (ShouldSkipFile(file, destFile, lastBackupTime))
-                {
-                    state.FilesProcessed++;
-                    state.FilesRemaining--;
-                    continue;
-                }
+                using var destinationStream = new FileStream(
+                    destinationPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    bufferSize: 81920,
+                    useAsync: true);
 
-                bool success = await CopyAndEncryptFileAsync(job, file, destFile);
-                if (success)
+                await sourceStream.CopyToAsync(destinationStream, 81920, cancellationToken);
+
+                // Preserve original file timestamps
+                var fileInfo = new FileInfo(sourcePath);
+                File.SetLastWriteTime(destinationPath, fileInfo.LastWriteTime);
+                File.SetCreationTime(destinationPath, fileInfo.CreationTime);
+
+                // Encrypt file if needed
+                if (job.EnableEncryption && _cryptoService.ShouldEncryptFile(destinationPath, _cryptoConfig))
                 {
-                    long fileSize = new FileInfo(file).Length;
-                    UpdateProgressState(job, state, fileSize);
+                    string encryptionKey = !string.IsNullOrEmpty(job.EncryptionKey)
+                        ? job.EncryptionKey
+                        : _cryptoConfig.EncryptionKey;
+                    Console.WriteLine("ENCRYPTION TRIGGERED");
+
+                    if (string.IsNullOrEmpty(encryptionKey))
+                    {
+                        throw new InvalidOperationException("No encryption key provided");
+                    }
+
+                    bool encryptionSuccess = await _cryptoService.EncryptFileAsync(destinationPath, encryptionKey);
+                    if (!encryptionSuccess)
+                    {
+                        throw new Exception($"Failed to encrypt file: {destinationPath}");
+                    }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Clean up partially copied file
+                if (File.Exists(destinationPath))
+                {
+                    try { File.Delete(destinationPath); } catch { }
+                }
+                throw;
+            }
+        }
+
+        public void PauseBackup(int jobId)
+        {
+            if (_activeTasks.TryGetValue(jobId, out var task))
+            {
+                task.Pause();
+            }
+        }
+
+        public void ResumeBackup(int jobId)
+        {
+            if (_activeTasks.TryGetValue(jobId, out var task))
+            {
+                task.Resume();
+            }
+        }
+
+        public void StopBackup(int jobId)
+        {
+            if (_activeTasks.TryGetValue(jobId, out var task))
+            {
+                task.Stop();
+                _activeTasks.TryRemove(jobId, out _);
+            }
+        }
+
+        #region Utility Methods
+
+        private string[] GetFilesToBackup(string sourcePath)
+        {
+            return Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories);
         }
 
         private void UpdateCurrentFileState(BackupJob job, BackupState state, string sourceFile, string destFile)
@@ -217,102 +359,12 @@ namespace BackupApp.Services
             _stateManager.UpdateState(job.Name, state);
         }
 
-        private bool ShouldSkipFile(string sourceFile, string destFile, DateTime? lastBackupTime)
+        private void FinalizeBackup(BackupJob job, BackupState state, bool success)
         {
-            if (!File.Exists(destFile)) return false;
-
-            FileInfo sourceInfo = new FileInfo(sourceFile);
-            FileInfo destInfo = new FileInfo(destFile);
-
-            return sourceInfo.LastWriteTime <= destInfo.LastWriteTime &&
-                  (!lastBackupTime.HasValue || destInfo.LastWriteTime >= lastBackupTime);
-        }
-
-        private string FormatSize(long bytes)
-        {
-            string[] sizes = { "B", "KB", "MB", "GB" };
-            int order = 0;
-            while (bytes >= 1024 && order < sizes.Length - 1)
-            {
-                order++;
-                bytes /= 1024;
-            }
-            return $"{bytes:0.##} {sizes[order]}";
-        }
-
-        private void CopyDirectory(BackupJob job, BackupState state, string sourceDir, string targetDir, bool differential)
-        {
-            var files = Directory.GetFiles(sourceDir);
-            var directories = Directory.GetDirectories(sourceDir);
-            DateTime? lastBackupTime = differential ? GetLastBackupTime(targetDir) : null;
-
-            foreach (var file in files)
-            {
-                string fileName = Path.GetFileName(file);
-                string destFile = GetDestinationPath(file, sourceDir, targetDir);
-
-                // Update current file in state
-                state.CurrentSourceFile = file;
-                state.CurrentDestFile = destFile;
-                state.LastActionTimestamp = DateTime.Now;
-                _stateManager.UpdateState(job.Name, state);
-
-                // Differential backup check
-                if (differential && File.Exists(destFile))
-                {
-                    FileInfo sourceInfo = new FileInfo(file);
-                    FileInfo targetInfo = new FileInfo(destFile);
-
-                    if (sourceInfo.LastWriteTime <= targetInfo.LastWriteTime &&
-                        (!lastBackupTime.HasValue || targetInfo.LastWriteTime >= lastBackupTime))
-                    {
-                        state.FilesProcessed++;
-                        continue;
-                    }
-                }
-
-                var stopwatch = Stopwatch.StartNew();
-                try
-                {
-                    File.Copy(file, destFile, true);
-                    stopwatch.Stop();
-
-                    long fileSize = new FileInfo(file).Length;
-                    _logger.LogFileTransfer(job.Name, file, destFile, fileSize, stopwatch.ElapsedMilliseconds, true);
-                    Console.WriteLine($"{_languageService.GetString("CopyingFile")}: {file} → {destFile}");
-                }
-                catch (Exception ex)
-                {
-                    stopwatch.Stop();
-                    _logger.LogFileTransfer(job.Name, file, destFile, 0, -stopwatch.ElapsedMilliseconds, false);
-                    Console.WriteLine($"{_languageService.GetString("CopyError")} {file}: {ex.Message}");
-                }
-                finally
-                {
-                    state.FilesProcessed++;
-                    state.FilesRemaining = state.TotalFiles - state.FilesProcessed;
-                    if (File.Exists(file))
-                    {
-                        state.SizeRemainingBytes -= new FileInfo(file).Length;
-                    }
-                    _stateManager.UpdateState(job.Name, state);
-                }
-            }
-
-            foreach (var directory in directories)
-            {
-                string dirName = Path.GetFileName(directory);
-                string destDir = GetDestinationPath(directory, sourceDir, targetDir);
-
-                if (!Directory.Exists(destDir))
-                {
-                    Directory.CreateDirectory(destDir);
-                    _logger.LogDirectoryCreation(job.Name, destDir);
-                    Console.WriteLine($"{_languageService.GetString("CreatingFolder")}: {destDir}");
-                }
-
-                CopyDirectory(job, state, directory, destDir, differential);
-            }
+            job.LastRun = DateTime.Now;
+            state.Status = success ? "Completed" : "Error";
+            state.LastActionTimestamp = DateTime.Now;
+            _stateManager.UpdateState(job.Name, state);
         }
 
         private long CalculateTotalSize(string[] files)
@@ -341,11 +393,154 @@ namespace BackupApp.Services
                 return null;
             }
         }
+
+        private bool ShouldSkipFile(string sourceFile, string destFile, DateTime? lastBackupTime)
+        {
+            if (!File.Exists(destFile)) return false;
+
+            FileInfo sourceInfo = new FileInfo(sourceFile);
+            FileInfo destInfo = new FileInfo(destFile);
+
+            return sourceInfo.LastWriteTime <= destInfo.LastWriteTime &&
+                  (!lastBackupTime.HasValue || destInfo.LastWriteTime >= lastBackupTime);
+        }
+
         private string GetDestinationPath(string sourcePath, string sourceRoot, string targetRoot)
         {
             string relativePath = Path.GetRelativePath(sourceRoot, sourcePath);
             return Path.Combine(targetRoot, relativePath);
         }
+
+        private string FormatSize(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            int order = 0;
+            while (bytes >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                bytes /= 1024;
+            }
+            return $"{bytes:0.##} {sizes[order]}";
+        }
+
+        #endregion
     }
 
+    public class BackupTask
+    {
+        private readonly SemaphoreSlim _pauseLock = new(1, 1);
+        private readonly CancellationTokenSource _cts = new();
+        private volatile bool _isPaused;
+        private volatile bool _isStopped;
+
+        public BackupJob Job { get; }
+        public CancellationToken CancellationToken => _cts.Token;
+
+        public BackupTask(BackupJob job)
+        {
+            Job = job ?? throw new ArgumentNullException(nameof(job));
+        }
+
+        public async Task WaitIfPaused(CancellationToken ct)
+        {
+            if (_isPaused && !_isStopped)
+            {
+                await _pauseLock.WaitAsync(ct);
+                _pauseLock.Release();
+                ct.ThrowIfCancellationRequested();
+            }
+        }
+
+        public void Pause()
+        {
+            if (!_isPaused && !_isStopped)
+            {
+                _isPaused = true;
+                _pauseLock.WaitAsync(); // This will block the task
+                Job.Status = "Paused";
+            }
+        }
+
+        public void Resume()
+        {
+            if (_isPaused && !_isStopped)
+            {
+                _isPaused = false;
+                _pauseLock.Release();
+                Job.Status = "Running";
+            }
+        }
+
+        public void Stop()
+        {
+            if (!_isStopped)
+            {
+                _isStopped = true;
+                _isPaused = false;
+                _cts.Cancel();
+                try { _pauseLock.Release(); } catch { } // Unblock if paused
+                Job.Status = "Stopped";
+            }
+        }
+    }
+
+    public class PriorityFileQueue
+    {
+        private readonly HashSet<string> _priorityExtensions = new();
+        private readonly SemaphoreSlim _prioritySemaphore = new(0, 1);
+
+        public void SetPriorityExtensions(IEnumerable<string> extensions)
+        {
+            _priorityExtensions.Clear();
+            foreach (var ext in extensions)
+            {
+                _priorityExtensions.Add(ext.StartsWith(".") ? ext : $".{ext}");
+            }
+        }
+
+        public bool HasPriorityFiles() => _priorityExtensions.Count > 0;
+        public bool IsPriorityFile(string filePath) =>
+            _priorityExtensions.Contains(Path.GetExtension(filePath));
+
+        public async Task WaitForPriorityFiles(CancellationToken ct)
+        {
+            while (HasPriorityFiles())
+            {
+                await Task.Delay(100, ct);
+            }
+        }
+    }
+
+    public class BusinessSoftwareMonitor
+    {
+        private readonly HashSet<string> _businessProcessNames;
+        private readonly Timer _monitoringTimer;
+        private bool _isRunning;
+
+        public event Action<bool> SoftwareRunningChanged;
+
+        public BusinessSoftwareMonitor(IEnumerable<string> processNames)
+        {
+            _businessProcessNames = new HashSet<string>(processNames, StringComparer.OrdinalIgnoreCase);
+            _monitoringTimer = new Timer(CheckProcesses, null, 0, 1000);
+        }
+
+        private void CheckProcesses(object state)
+        {
+            bool anyRunning = Process.GetProcesses()
+                .Any(p => _businessProcessNames.Contains(p.ProcessName));
+
+            if (anyRunning != _isRunning)
+            {
+                _isRunning = anyRunning;
+                SoftwareRunningChanged?.Invoke(_isRunning);
+            }
+        }
+    }
+
+    public class BackupProgressReport
+    {
+        public double ProgressPercentage { get; set; }
+        public string CurrentFile { get; set; }
+    }
 }

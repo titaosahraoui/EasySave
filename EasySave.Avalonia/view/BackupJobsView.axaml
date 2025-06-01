@@ -5,7 +5,6 @@
              xmlns:models="clr-namespace:BackupApp.Models;assembly=EasySave-V1"
              xmlns:vm="clr-namespace:BackupApp.ViewModels"
              xmlns:converters="clr-namespace:BackupApp.Avalonia.Converters"
-             xmlns:global="clr-namespace:"
              x:Class="BackupApp.Avalonia.Views.BackupJobsView"
              mc:Ignorable="d"
              d:DesignWidth="800" d:DesignHeight="600"
@@ -16,6 +15,7 @@
 		<converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
 		<converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
 		<converters:NullableDateTimeToStringConverter x:Key="DateTimeConverter"/>
+		<converters:ProgressToColorConverter x:Key="ProgressToColorConverter"/>
 	</UserControl.Resources>
 
 	<Grid Margin="10">
@@ -51,6 +51,8 @@
 				<ListBox Grid.Row="1"
                          ItemsSource="{Binding Jobs}"
                          SelectedItem="{Binding SelectedJob}"
+                         SelectedItems="{Binding SelectedJobs}"
+                         SelectionMode="Multiple"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          Margin="5">
 					<ListBox.ItemTemplate>
@@ -62,33 +64,58 @@
 										<ColumnDefinition Width="*"/>
 										<ColumnDefinition Width="Auto"/>
 									</Grid.ColumnDefinitions>
+									<Grid.RowDefinitions>
+										<RowDefinition Height="Auto"/>
+										<RowDefinition Height="Auto"/>
+										<RowDefinition Height="Auto"/>
+									</Grid.RowDefinitions>
 
 									<!-- Job Type Indicator -->
-									<Border Grid.Column="0"
+									<Border Grid.Column="0" Grid.RowSpan="3"
                                             Width="5"
                                             Margin="0,0,10,0"
                                             CornerRadius="2"
                                             Background="{Binding Type, Converter={StaticResource TypeToColorConverter}}"/>
 
 									<!-- Job Details -->
-									<StackPanel Grid.Column="1">
+									<StackPanel Grid.Column="1" Grid.Row="0">
 										<TextBlock Text="{Binding Name}"
                                                    FontWeight="Bold"
+                                                   Foreground="Black"
                                                    TextTrimming="CharacterEllipsis"/>
 										<TextBlock Text="{Binding SourcePath}"
                                                    FontSize="12"
                                                    Foreground="#666"
                                                    TextTrimming="CharacterEllipsis"/>
-										<TextBlock Text="{Binding LastRun, Converter={StaticResource DateTimeConverter}}"
-                                                   FontSize="12"
-                                                   Foreground="#666"/>
 									</StackPanel>
 
+									<!-- Progress Bar -->
+									<StackPanel Grid.Column="1" Grid.Row="1" Margin="0,5">
+										<ProgressBar Minimum="0" Maximum="100"
+                                                     Value="{Binding Progress}"
+                                                     Height="8"
+                                                     Foreground="{Binding Progress, Converter={StaticResource ProgressToColorConverter}}"/>
+										<TextBlock Text="{Binding CurrentFile}"
+                                                   FontSize="10"
+                                                   Foreground="#666"
+                                                   TextTrimming="CharacterEllipsis"/>
+									</StackPanel>
+
+									<!-- Last Run -->
+									<TextBlock Grid.Column="1" Grid.Row="2"
+                                               Text="{Binding LastRun, Converter={StaticResource DateTimeConverter}}"
+                                               FontSize="11"
+                                               Foreground="#666"/>
+
 									<!-- Status Indicator -->
-									<StackPanel Grid.Column="2" HorizontalAlignment="Right">
+									<StackPanel Grid.Column="2" Grid.Row="0" HorizontalAlignment="Right">
 										<TextBlock Text="{Binding Status}"
                                                    Foreground="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
                                                    FontWeight="SemiBold"/>
+										<TextBlock Text="{Binding Progress, StringFormat={}{0}%}"
+                                                   HorizontalAlignment="Right"
+                                                   FontSize="12"
+                                                   Foreground="#666"/>
 									</StackPanel>
 								</Grid>
 							</Border>
@@ -96,20 +123,61 @@
 					</ListBox.ItemTemplate>
 				</ListBox>
 
-				<!-- Action Buttons -->
-				<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
-					<Button Command="{Binding RunJobCommand}"
-                            Content="Run"
-                            ToolTip.Tip="Run selected backup job"
-                            Margin="0,0,10,0"
-                            Width="120"/>
+				<!-- Action Buttons and Overall Progress -->
+				<StackPanel Grid.Row="2" Orientation="Vertical" HorizontalAlignment="Stretch" Margin="0,10">
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+						<Button Click="OnAddJobClick"
+                                Content="Add"
+                                ToolTip.Tip="Add a backup job"
+                                Margin="0,0,10,0"
+                                Width="120"/>
 
-					<Button Command="{Binding DeleteJobCommand}"
-                            Content="Delete"
-                            ToolTip.Tip="Delete selected backup job"
-                            Background="#e74c3c"
-                            Foreground="White"
-                            Width="120"/>
+						<Button Command="{Binding RunJobCommand}"
+                                Content="Run"
+                                ToolTip.Tip="Run selected backup job"
+                                Margin="0,0,10,0"
+                                Width="120"/>
+
+						<!--<Button Command="{Binding RunMultipleJobsCommand}"
+                                Content="Run All"
+                                ToolTip.Tip="Run all selected jobs"
+                                Margin="0,0,10,0"
+                                Width="120"/>-->
+
+						<Button Command="{Binding DeleteJobCommand}"
+                                Content="Delete"
+                                ToolTip.Tip="Delete selected backup job"
+                                Background="#e74c3c"
+                                Foreground="White"
+                                Width="120"/>
+					</StackPanel>
+
+					<!-- Overall Progress -->
+					<Border Background="#f5f5f5" CornerRadius="4" Margin="5,10" Padding="5">
+						<StackPanel>
+							<TextBlock Text="Overall Progress"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,5"/>
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="*"/>
+									<ColumnDefinition Width="Auto"/>
+								</Grid.ColumnDefinitions>
+								<ProgressBar Minimum="0" Maximum="100"
+                                             Value="{Binding OverallProgress}"
+                                             Height="10"/>
+								<TextBlock Grid.Column="1"
+                                           Text="{Binding OverallProgress, StringFormat={}{0}%}"
+                                           Margin="5,0,0,0"
+                                           FontSize="12"/>
+							</Grid>
+							<TextBlock Text="{Binding OverallStatus}"
+                                       FontSize="11"
+                                       Foreground="#666"
+                                       Margin="0,5,0,0"
+                                       TextTrimming="CharacterEllipsis"/>
+						</StackPanel>
+					</Border>
 				</StackPanel>
 			</Grid>
 		</Border>
@@ -132,6 +200,7 @@
 					<!-- Job Details -->
 					<Grid IsVisible="{Binding SelectedJob, Converter={StaticResource NullToBoolConverter}}">
 						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
 							<RowDefinition Height="Auto"/>
 							<RowDefinition Height="Auto"/>
 							<RowDefinition Height="Auto"/>
@@ -171,15 +240,36 @@
                                        TextWrapping="Wrap"/>
 						</StackPanel>
 
-						<!-- Last Run -->
+						<!-- Progress -->
 						<StackPanel Grid.Row="4" Margin="0,0,0,10">
+							<TextBlock Text="Progress"
+                                       FontWeight="Bold"/>
+							<ProgressBar Minimum="0" Maximum="100"
+                                         Value="{Binding SelectedJob.Progress}"
+                                         Height="10"/>
+							<TextBlock Text="{Binding SelectedJob.Progress, StringFormat={}{0}%}"
+                                       HorizontalAlignment="Center"
+                                       FontSize="12"/>
+						</StackPanel>
+
+						<!-- Current File -->
+						<StackPanel Grid.Row="5" Margin="0,0,0,10">
+							<TextBlock Text="Current File"
+                                       FontWeight="Bold"/>
+							<TextBlock Text="{Binding SelectedJob.CurrentFile}"
+                                       TextWrapping="Wrap"
+                                       FontSize="12"/>
+						</StackPanel>
+
+						<!-- Last Run -->
+						<StackPanel Grid.Row="6" Margin="0,0,0,10">
 							<TextBlock Text="Last Run"
                                        FontWeight="Bold"/>
 							<TextBlock Text="{Binding SelectedJob.LastRun, Converter={StaticResource DateTimeConverter}}"/>
 						</StackPanel>
 
 						<!-- Status -->
-						<StackPanel Grid.Row="5" Margin="0,0,0,10">
+						<StackPanel Grid.Row="7" Margin="0,0,0,10">
 							<TextBlock Text="Status"
                                        FontWeight="Bold"/>
 							<TextBlock Text="{Binding SelectedJob.Status}"/>

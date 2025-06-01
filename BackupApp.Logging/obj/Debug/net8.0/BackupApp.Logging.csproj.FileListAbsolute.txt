@@ -32,18 +32,6 @@ C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\Backup
 C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\refint\BackupApp.Logging.dll
 C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.pdb
 C:\Users\Mohamed\Source\Repos\EasySave\BackupApp.Logging\obj\Debug\net8.0\ref\BackupApp.Logging.dll
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.deps.json
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.dll
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.pdb
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfoInputs.cache
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfo.cs
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.csproj.CoreCompileInputs.cache
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.sourcelink.json
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.dll
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\refint\BackupApp.Logging.dll
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.pdb
-C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\ref\BackupApp.Logging.dll
 C:\Users\DELL\Downloads\EasySave-2.0\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.deps.json
 C:\Users\DELL\Downloads\EasySave-2.0\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.dll
 C:\Users\DELL\Downloads\EasySave-2.0\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.pdb
@@ -67,3 +55,15 @@ C:\Users\Mohamed\source\repos\titaosahraoui\EasySave\BackupApp.Logging\obj\Debug
 C:\Users\Mohamed\source\repos\titaosahraoui\EasySave\BackupApp.Logging\obj\Debug\net8.0\refint\BackupApp.Logging.dll
 C:\Users\Mohamed\source\repos\titaosahraoui\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.pdb
 C:\Users\Mohamed\source\repos\titaosahraoui\EasySave\BackupApp.Logging\obj\Debug\net8.0\ref\BackupApp.Logging.dll
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.deps.json
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.dll
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\bin\Debug\net8.0\BackupApp.Logging.pdb
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfoInputs.cache
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.AssemblyInfo.cs
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.csproj.CoreCompileInputs.cache
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.sourcelink.json
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.dll
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\refint\BackupApp.Logging.dll
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\BackupApp.Logging.pdb
+C:\Users\sahra\OneDrive\Desktop\CESI Projects\EasySave\BackupApp.Logging\obj\Debug\net8.0\ref\BackupApp.Logging.dll

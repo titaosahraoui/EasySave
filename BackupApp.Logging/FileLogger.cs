@@ -73,6 +73,34 @@ namespace BackupApp.Logging
             AppendLog(entry);
         }
 
+        public void LogWarning(string backupName, string warningMessage)
+        {
+            var entry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                BackupName = backupName,
+                SourcePath = warningMessage,
+                ActionType = "Warning",
+                Success = true
+            };
+
+            AppendLog(entry);
+        }
+
+        public void LogInfo(string backupName, string message)
+        {
+            var entry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                BackupName = backupName,
+                SourcePath = message,
+                ActionType = "Info",
+                Success = true
+            };
+
+            AppendLog(entry);
+        }
+
         private void AppendLog(LogEntry entry)
         {
             lock (_lock)
@@ -112,32 +140,6 @@ namespace BackupApp.Logging
             }
 
             return logs;
-        }
-
-        public void LogInfo(string category, string message)
-        {
-            var entry = new LogEntry
-            {
-                Timestamp = DateTime.Now,
-                BackupName = category,
-                SourcePath = message,
-                ActionType = "Info",
-                Success = true
-            };
-            AppendLog(entry);
-        }
-
-        public void LogWarning(string category, string message)
-        {
-            var entry = new LogEntry
-            {
-                Timestamp = DateTime.Now,
-                BackupName = category,
-                SourcePath = message,
-                ActionType = "Warning",
-                Success = true
-            };
-            AppendLog(entry);
         }
     }
 }

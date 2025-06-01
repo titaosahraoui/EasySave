@@ -10,7 +10,7 @@ public class LanguageService : ReactiveObject
     private CultureInfo _currentCulture;
     private readonly AppConfig _config;
 
-    public LanguageService()
+    public LanguageService() 
     {
         _config = AppConfig.Load();
         _resourceManager = new ResourceManager("EasySave_V1.Resources.Strings", Assembly.GetExecutingAssembly());
@@ -38,10 +38,10 @@ public class LanguageService : ReactiveObject
             _currentCulture = newCulture;
             _config.DefaultLanguage = languageCode;
             _config.Save();
+            this.RaisePropertyChanged(nameof(GetString)); // Notify UI to update
         }
         catch
         {
-            // Fallback to default if invalid language code
             _currentCulture = CultureInfo.InvariantCulture;
         }
     }
@@ -58,5 +58,7 @@ public class LanguageService : ReactiveObject
             return $"[{key}]"; // Return placeholder on error
         }
     }
+
+
 
 }

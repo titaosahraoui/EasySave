@@ -17,15 +17,7 @@ namespace BackupApp.Data
         {
             lock (_lock)
             {
-                // Assign the next available ID (1-5)
                 job.Id = _backupJobs.Any() ? _backupJobs.Max(j => j.Id) + 1 : 1;
-
-                // Ensure we don't exceed 5 jobs
-                if (_backupJobs.Count >= 5)
-                {
-                    throw new InvalidOperationException("Maximum of 5 backup jobs reached");
-                }
-
                 _backupJobs.Add(job);
                 SaveBackupJobs();
             }

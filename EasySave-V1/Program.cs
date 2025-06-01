@@ -26,9 +26,11 @@ class Program
 
     private static void InitializeServices()
     {
+        var monitoredApps = new[] { "Word", "Excel", "notepad" }; // replace with actual process names you want to monitor
+        var softwareMonitor = new BusinessSoftwareMonitor(monitoredApps);
         _config = AppConfig.Load();
         _repository = new BackupRepository();
-        _backupService = new BackupService(_config.DefaultLogFormat);
+        _backupService = new BackupService(softwareMonitor,_config.DefaultLogFormat);
         _languageService = new LanguageService();
     }
 
@@ -74,12 +76,26 @@ class Program
 
     private static void ExecuteBackup(int jobId)
     {
+        var monitoredApps = new[] { "Word", "Excel", "notepad" };
+        var softwareMonitor = new BusinessSoftwareMonitor(monitoredApps);
         var job = _repository.GetBackupJob(jobId);
+
         if (job != null)
         {
             Console.WriteLine($"\n{_languageService.GetString("StartingBackup")} {job.Name} (ID: {jobId})");
-            _backupService = new BackupService(_config.DefaultLogFormat);
-            _backupService.PerformBackup(job);
+            _backupService = new BackupService(softwareMonitor, _config.DefaultLogFormat);
+
+            // Create a progress reporter
+            var progress = new Progress<BackupProgressReport>(report =>
+            {
+                Console.WriteLine($"{report.ProgressPercentage:0.00}% - {report.CurrentFile}");
+            });
+
+            // Create a cancellation token source
+            using var cts = new CancellationTokenSource();
+
+            // Start the backup with progress reporting
+            _backupService.PerformBackupAsync(job, progress, cts.Token).Wait();
         }
         else
         {

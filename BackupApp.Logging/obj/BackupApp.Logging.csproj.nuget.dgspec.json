@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Mohamed\\source\\repos\\titaosahraoui\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj": {}
+    "C:\\Users\\sahra\\OneDrive\\Desktop\\CESI Projects\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Mohamed\\source\\repos\\titaosahraoui\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj": {
+    "C:\\Users\\sahra\\OneDrive\\Desktop\\CESI Projects\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Mohamed\\source\\repos\\titaosahraoui\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj",
+        "projectUniqueName": "C:\\Users\\sahra\\OneDrive\\Desktop\\CESI Projects\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj",
         "projectName": "BackupApp.Logging",
-        "projectPath": "C:\\Users\\Mohamed\\source\\repos\\titaosahraoui\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj",
-        "packagesPath": "C:\\Users\\Mohamed\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Mohamed\\source\\repos\\titaosahraoui\\EasySave\\BackupApp.Logging\\obj\\",
+        "projectPath": "C:\\Users\\sahra\\OneDrive\\Desktop\\CESI Projects\\EasySave\\BackupApp.Logging\\BackupApp.Logging.csproj",
+        "packagesPath": "C:\\Users\\sahra\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\sahra\\OneDrive\\Desktop\\CESI Projects\\EasySave\\BackupApp.Logging\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Mohamed\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\sahra\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -44,8 +44,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.200"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -66,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -22,11 +22,9 @@ namespace BackupApp.Avalonia
                 // Create the main window first
                 var mainWindow = new MainWindow();
 
-                // Initialize the controller with the main window reference
-                var controller = new BackupController();
 
                 // Set the controller as DataContext
-                mainWindow.DataContext = controller;
+                mainWindow.DataContext = new MainWindowViewModel(); ;
 
                 // Assign the main window
                 desktop.MainWindow = mainWindow;

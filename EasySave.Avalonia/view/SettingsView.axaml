@@ -46,7 +46,7 @@
 						<!-- Default Encryption Key -->
 						<StackPanel Spacing="5">
 							<TextBlock Text="Default Encryption Key:" FontWeight="SemiBold"/>
-							<TextBox Text="{Binding DefaultEncryptionKey}"
+							<TextBox Text="{Binding EncryptionKey}"
                                      Watermark="Enter default encryption key"
                                      PasswordChar="*"
                                      UseFloatingWatermark="True"/>
@@ -152,11 +152,11 @@
 										<ColumnDefinition Width="Auto"/>
 									</Grid.ColumnDefinitions>
 									<TextBlock Text="{Binding}" VerticalAlignment="Center"/>
-									<Button Grid.Column="1"
+									<!--<Button Grid.Column="1"
                                             Content="Remove"
                                             Command="{Binding $parent[ItemsControl].DataContext.RemovePriorityExtensionCommand}"
                                             CommandParameter="{Binding}"
-                                            Margin="5,0,0,0"/>
+                                            Margin="5,0,0,0"/>-->
 								</Grid>
 							</DataTemplate>
 						</ListBox.ItemTemplate>
