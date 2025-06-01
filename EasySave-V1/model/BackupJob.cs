@@ -14,10 +14,14 @@ namespace BackupApp.Models
         private DateTime _createdAt = DateTime.Now;
         private DateTime? _lastRun;
         private string _status = "Pending";
+
         private double _progress;
         private string _currentFile;
 
+        private bool _enableEncryption;
+        private string _encryptionKey = string.Empty;
 
+       
         public int Id
         {
             get => _id;
@@ -74,6 +78,20 @@ namespace BackupApp.Models
             get => _currentFile;
             set => this.RaiseAndSetIfChanged(ref _currentFile, value);
         }
+        public bool EnableEncryption
+        {
+            get => _enableEncryption;
+            set => this.RaiseAndSetIfChanged(ref _enableEncryption, value);
+        }
+
+        public string EncryptionKey
+        {
+            get => _encryptionKey;
+            set => this.RaiseAndSetIfChanged(ref _encryptionKey, value);
+        }
+
+
+
     }
 
     public enum BackupType

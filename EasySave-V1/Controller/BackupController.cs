@@ -27,14 +27,14 @@ namespace BackupApp.Controllers
 
         public void DeleteJob(int id) => _repository.DeleteBackupJob(id);
 
-        public void RunBackup(int jobId)
-        {
-            var job = _repository.GetBackupJob(jobId);
-            if (job != null)
-            {
-                _backupService.PerformBackup(job);
-            }
-        }
+        //public void RunBackup(int jobId)
+        //{
+        //    var job = _repository.GetBackupJob(jobId);
+        //    if (job != null)
+        //    {
+        //        _backupService.PerformBackup(job);
+        //    }
+        //}
     }
 
 }

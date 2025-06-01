@@ -1,49 +1,82 @@
 ﻿using BackupApp.Logging;
-using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
+using BackupApp.Models;
 
-namespace BackupApp
+public class AppConfig
 {
-    public class AppConfig
+    public string DefaultLanguage { get; set; } = "en-US";
+    public LogFormat DefaultLogFormat { get; set; } = LogFormat.Json;
+    public List<string> PriorityExtensions { get; set; } = new List<string>();
+    public List<string> EncryptedExtensions { get; set; } = new List<string>();
+
+    // Encryption settings
+    public CryptoSettings Encryption { get; set; } = new CryptoSettings();
+
+    private static string ConfigPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.config");
+
+    public static AppConfig Load()
     {
-        public string DefaultLanguage { get; set; } = "en-US";
-        public LogFormat DefaultLogFormat { get; set; } = LogFormat.Json;
-        public List<string> PriorityExtensions { get; set; } = new List<string>();
-        public List<string> EncryptedExtensions { get; set; } = new List<string>();
-
-        private static readonly string ConfigPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "EasySave",
-            "config.json");
-
-        public static AppConfig Load()
+        try
         {
-            try
+            if (File.Exists(ConfigPath))
             {
-                if (File.Exists(ConfigPath))
-                {
-                    string json = File.ReadAllText(ConfigPath);
-                    return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
-                }
+                var json = File.ReadAllText(ConfigPath);
+                var config = JsonSerializer.Deserialize<AppConfig>(json);
+
+                // Ensure encryption settings are initialized
+                config.Encryption ??= new CryptoSettings();
+
+                return config;
             }
-            catch { }
-            return new AppConfig();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load configuration: {ex.Message}");
         }
 
-        public void Save()
+        return new AppConfig();
+    }
+
+    public void Save()
+    {
+        try
         {
-            try
+            var options = new JsonSerializerOptions
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
-                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
-                File.WriteAllText(ConfigPath, json);
-            }
-            catch { }
+                WriteIndented = true
+            };
+
+            var json = JsonSerializer.Serialize(this, options);
+            File.WriteAllText(ConfigPath, json);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to save configuration: {ex.Message}", ex);
         }
     }
+
+    public CryptoConfig GetCryptoConfig()
+    {
+        return new CryptoConfig
+        {
+            IsEnabled = Encryption.IsEnabled,
+            EncryptionKey = Encryption.EncryptionKey, // Use single consistent property
+            FileExtensions = new System.Collections.ObjectModel.ObservableCollection<string>(Encryption.FileExtensions)
+        };
+    }
+
+    public void UpdateFromCryptoConfig(CryptoConfig cryptoConfig)
+    {
+        Encryption.IsEnabled = cryptoConfig.IsEnabled;
+        Encryption.EncryptionKey = cryptoConfig.EncryptionKey;
+        Encryption.FileExtensions = new List<string>(cryptoConfig.FileExtensions);
+    }
+}
+
+public class CryptoSettings
+{
+    public bool IsEnabled { get; set; } = false;
+    public string CryptoSoftPath { get; set; } = string.Empty;
+    public string EncryptionKey { get; set; } = string.Empty; // Keep only this
+    public List<string> FileExtensions { get; set; } = new List<string>();
 }

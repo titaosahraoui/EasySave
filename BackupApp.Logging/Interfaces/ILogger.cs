@@ -16,5 +16,7 @@
 
         void LogWarning(string backupName, string warningMessage); 
         List<LogEntry> GetDailyLogs();
+        void LogInfo(string v1, string v2);
+        //void LogWarning(string v1, string v2);
     }
 }

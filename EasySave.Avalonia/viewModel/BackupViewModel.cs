@@ -54,12 +54,15 @@ namespace BackupApp.ViewModels
 
         public BackupViewModel()
         {
+            _config = AppConfig.Load();
 
             var monitoredApps = new[] { "Word", "notepad" }; // replace with actual process names you want to monitor
             var softwareMonitor = new BusinessSoftwareMonitor(monitoredApps);
 
+            var cryptoConfig = _config.GetCryptoConfig();
+
             _repository = new BackupRepository();
-            _backupService = new BackupService(softwareMonitor);
+            _backupService = new BackupService(softwareMonitor, _config.DefaultLogFormat, cryptoConfig);
             _languageService = new LanguageService();
 
             LoadJobsCommand = new RelayCommand(LoadJobs);
@@ -138,6 +141,10 @@ namespace BackupApp.ViewModels
                             {
                                 await _backupService.PerformBackupAsync(currentJob, progress, cancellationTokenSource.Token);
                                 currentJob.Status = "Completed";
+                                Console.WriteLine("CONFIG LOADED:");
+                                Console.WriteLine($"  IsEnabled: {_config.Encryption.IsEnabled}");
+                                Console.WriteLine($"  Key: {_config.Encryption.EncryptionKey}");
+                                Console.WriteLine($"  Extensions: {string.Join(", ", _config.Encryption.FileExtensions)}");
                                 currentJob.LastRun = DateTime.Now;
                             }
                             catch (OperationCanceledException)

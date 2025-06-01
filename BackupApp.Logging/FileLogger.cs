@@ -73,16 +73,52 @@ namespace BackupApp.Logging
             AppendLog(entry);
         }
 
+        public void LogWarning(string backupName, string warningMessage)
+        {
+            var entry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                BackupName = backupName,
+                SourcePath = warningMessage,
+                ActionType = "Warning",
+                Success = true
+            };
+
+            AppendLog(entry);
+        }
+
+        public void LogInfo(string backupName, string message)
+        {
+            var entry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                BackupName = backupName,
+                SourcePath = message,
+                ActionType = "Info",
+                Success = true
+            };
+
+            AppendLog(entry);
+        }
+
         private void AppendLog(LogEntry entry)
         {
             lock (_lock)
             {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                string jsonEntry = JsonSerializer.Serialize(entry, options);
-
-                File.AppendAllText(
-                    GetDailyLogPath(),
-                    jsonEntry + Environment.NewLine);
+                try
+                {
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    string jsonEntry = JsonSerializer.Serialize(entry, options);
+                    File.AppendAllText(
+                        GetDailyLogPath(),
+                        jsonEntry + Environment.NewLine);
+                }
+                catch (Exception ex)
+                {
+                    // Fallback logging to console if file logging fails
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to write log: {ex.Message}");
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{entry.ActionType}] {entry.BackupName}: {entry.SourcePath}");
+                }
             }
         }
 
@@ -104,19 +140,6 @@ namespace BackupApp.Logging
             }
 
             return logs;
-        }
-        public void LogWarning(string backupName, string warningMessage)
-        {
-            var entry = new LogEntry
-            {
-                Timestamp = DateTime.Now,
-                BackupName = backupName,
-                SourcePath = warningMessage,
-                ActionType = "Warning",
-                Success = false
-            };
-
-            AppendLog(entry);
         }
     }
 }
