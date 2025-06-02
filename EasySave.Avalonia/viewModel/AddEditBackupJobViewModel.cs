@@ -37,11 +37,11 @@ namespace BackupApp.ViewModels
         public RelayCommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
-        public AddEditBackupJobViewModel(Window window, BackupJob existingJob = null)
+        public AddEditBackupJobViewModel(Window window, BackupViewModel backupViewModel, BackupJob existingJob = null )
         {
             _window = window;
             _repository = new BackupRepository();
-            _backupViewModel = new BackupViewModel();
+            _backupViewModel = backupViewModel;
 
             if (existingJob != null)
             {
@@ -154,7 +154,8 @@ namespace BackupApp.ViewModels
                     _repository.UpdateBackupJob(CurrentJob);
                     ShowAlert("Backup job updated successfully");
                 }
-               
+
+                _backupViewModel.RefreshBackupJobs();
                 _window.Close(CurrentJob);
             }
             catch (Exception ex)

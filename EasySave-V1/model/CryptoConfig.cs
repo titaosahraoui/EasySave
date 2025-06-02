@@ -8,6 +8,7 @@ namespace BackupApp.Models
         private bool _isEnabled;
         private string _encryptionKey = string.Empty;
         private ObservableCollection<string> _fileExtensions = new();
+        private string _cryptoSoftPath = string.Empty;
 
         public bool IsEnabled
         {
@@ -28,6 +29,11 @@ namespace BackupApp.Models
         {
             get => _fileExtensions;
             set => this.RaiseAndSetIfChanged(ref _fileExtensions, value);
+        }
+        public string CryptoSoftPath
+        {
+            get => _cryptoSoftPath;
+            set => this.RaiseAndSetIfChanged(ref _cryptoSoftPath, value);
         }
     }
 }

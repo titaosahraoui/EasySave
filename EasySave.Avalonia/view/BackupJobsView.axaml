@@ -138,11 +138,11 @@
                                 Margin="0,0,10,0"
                                 Width="120"/>
 
-						<!--<Button Command="{Binding RunMultipleJobsCommand}"
-                                Content="Run All"
-                                ToolTip.Tip="Run all selected jobs"
+                        <Button Command="{Binding RefreshJobsCommand}"
+                                Content="Refresh"
+                                ToolTip.Tip="Refresh job list"
                                 Margin="0,0,10,0"
-                                Width="120"/>-->
+                                Width="120"/>
 
 						<Button Command="{Binding DeleteJobCommand}"
                                 Content="Delete"

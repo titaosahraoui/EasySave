@@ -25,14 +25,12 @@ namespace BackupApp.Avalonia.Views
             var parentWindow = TopLevel.GetTopLevel(this) as Window;
             if (parentWindow == null) return;
 
-            // Use the static ShowDialog method we created
-            var result = await AddEditBackupJobWindow.ShowDialog(parentWindow);
+            if (DataContext is not BackupViewModel viewModel) return;
 
-            // If a job was created/edited, refresh the list
-            if (result != null && DataContext is BackupViewModel viewModel)
-            {
-                viewModel.RefreshBackupJobs();
-            }
+            var result = await AddEditBackupJobWindow.ShowDialog(parentWindow, viewModel);
+
+            // Always refresh after the dialog closes, regardless of result
+            viewModel.RefreshBackupJobs();
         }
     }
 }

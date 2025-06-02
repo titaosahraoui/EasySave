@@ -31,15 +31,49 @@ public class FileManager(string path, string key)
     public int TransformFile()
     {
         if (!CheckFile()) return -1;
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        var fileBytes = File.ReadAllBytes(FilePath);
-        var keyBytes = ConvertToByte(Key);
-        fileBytes = XorMethod(fileBytes, keyBytes);
-        File.WriteAllBytes(FilePath, fileBytes);
-        stopwatch.Stop();
-        return (int)stopwatch.ElapsedMilliseconds;
+
+        // Use file streams instead of ReadAllBytes
+        string tempOutput = Path.GetTempFileName();
+        try
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            using (var input = File.OpenRead(FilePath))
+            using (var output = File.Create(tempOutput))
+            {
+                var keyBytes = Encoding.UTF8.GetBytes(Key);
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                int keyIndex = 0;
+
+                while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    for (int i = 0; i < bytesRead; i++)
+                    {
+                        buffer[i] = (byte)(buffer[i] ^ keyBytes[keyIndex % keyBytes.Length]);
+                        keyIndex++;
+                    }
+                    output.Write(buffer, 0, bytesRead);
+                }
+            }
+
+            // Replace original only after successful encryption
+            File.Replace(tempOutput, FilePath, null);
+            stopwatch.Stop();
+            return (int)stopwatch.ElapsedMilliseconds;
+        }
+        catch
+        {
+            SafeDelete(tempOutput);
+            return -99;
+        }
     }
 
+    private static void SafeDelete(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); }
+        catch { /* Ignore deletion errors */ }
+    }
     /// <summary>
     /// Convert a string in byte array
     /// </summary>
