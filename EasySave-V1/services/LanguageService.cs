@@ -46,6 +46,7 @@ public class LanguageService : ReactiveObject
         }
     }
 
+
     public string GetString(string key)
     {
         try

@@ -237,10 +237,9 @@ namespace BackupApp.Services
 
                             if (result != -1)
                             {
-                                // Remplacer le fichier original par le fichier chiffré
-                                string targetPath = request.SourcePath + ".encrypted";
-                                File.Move(request.TempFilePath, targetPath);
-                                _logger.LogInfo("CryptoSoft", $"Fichier chiffré créé: {targetPath}");
+                                // Replace the original file with the encrypted temp file
+                                File.Replace(request.TempFilePath, request.SourcePath, null);
+                                _logger.LogInfo("CryptoSoft", $"Fichier chiffré: {request.SourcePath}");
                             }
                             else
                             {

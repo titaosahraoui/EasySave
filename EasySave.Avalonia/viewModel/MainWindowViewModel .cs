@@ -4,12 +4,24 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using BackupApp.Avalonia;
 
 
 namespace BackupApp.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
+
+        public string ApplicationTitle => Language.GetString("ApplicationTitle");
+        public string NavigationText => Language.GetString("Navigation");
+        public string BackupJobsText => Language.GetString("BackupJobs");
+        public string SettingsText => Language.GetString("Settings");
+        public string LogsText => Language.GetString("Logs");
+        public string QuickActionsText => Language.GetString("QuickActions");
+        public string RunAllJobsText => Language.GetString("RunAllJobs");
+        public string PauseAllText => Language.GetString("PauseAll");
+        public string ResumeAllText => Language.GetString("ResumeAll");
+        public string StopAllText => Language.GetString("StopAll");
         private ViewModelBase _currentView;
 
         public ViewModelBase CurrentView
@@ -17,6 +29,9 @@ namespace BackupApp.ViewModels
             get => _currentView;
             set => SetProperty(ref _currentView, value);
         }
+        private readonly LanguageBinding _languageBinding;
+
+        public LanguageBinding Language => _languageBinding;
 
         public BackupViewModel BackupVM { get; }
 
@@ -30,6 +45,10 @@ namespace BackupApp.ViewModels
 
         public MainWindowViewModel()
         {
+
+            _languageBinding = new LanguageBinding();
+            var settingsVM = new SettingsViewModel();
+            settingsVM.OnLanguageChanged += OnLanguageChanged;
             // Initialize the Backup ViewModel
             BackupVM = new BackupViewModel();
             CurrentView = BackupVM;
@@ -42,6 +61,24 @@ namespace BackupApp.ViewModels
             NavigateToSettingsCommand = new RelayCommand(NavigateToSettings);
             // Set default view
             NavigateToBackupJobs();
+        }
+
+        private void OnLanguageChanged(object sender, string newLanguage)
+        {
+            // Update the language in LanguageBinding
+            Language.GetString(newLanguage);
+
+            // Notify all properties that they need to update
+            OnPropertyChanged(nameof(ApplicationTitle));
+            OnPropertyChanged(nameof(NavigationText));
+            OnPropertyChanged(nameof(BackupJobsText));
+            OnPropertyChanged(nameof(SettingsText));
+            OnPropertyChanged(nameof(LogsText));
+            OnPropertyChanged(nameof(QuickActionsText));
+            OnPropertyChanged(nameof(RunAllJobsText));
+            OnPropertyChanged(nameof(PauseAllText));
+            OnPropertyChanged(nameof(ResumeAllText));
+            OnPropertyChanged(nameof(StopAllText));
         }
 
         private async Task RunAllJobs()

@@ -27,9 +27,45 @@ namespace BackupApp.Logging
             return Path.Combine(_logDirectory, $"{DateTime.Now:yyyy-MM-dd}.json");
         }
 
+        public void LogOperation(string backupName, string operation, string status,
+            string sourcePath = null, string destPath = null,
+            long fileSize = 0, long transferTime = 0,
+            bool? success = null, Dictionary<string, object> details = null)
+        {
+            var entry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                BackupName = backupName,
+                Operation = operation,
+                Status = status,
+                SourcePath = sourcePath ?? string.Empty,
+                DestinationPath = destPath ?? string.Empty,
+                FileSizeBytes = fileSize,
+                TransferTimeMs = transferTime,
+                Success = success ?? (status == "Completed"),
+                ActionType = GetActionType(operation),
+                Details = details != null ? JsonSerializer.Serialize(details) : null
+            };
+
+            AppendLog(entry);
+        }
+
+        private string GetActionType(string operation)
+        {
+            return operation switch
+            {
+                "Encryption" => "Security",
+                "FileTransfer" => "Transfer",
+                "Directory" => "Directory",
+                _ => "Operation"
+            };
+        }
+
         public void LogFileTransfer(string backupName, string sourcePath, string destPath,
                                   long fileSize, long transferTimeMs, bool success)
         {
+            LogOperation(backupName, "FileTransfer", success ? "Completed" : "Failed",
+                sourcePath, destPath, fileSize, transferTimeMs, success);
             var entry = new LogEntry
             {
                 Timestamp = DateTime.Now,

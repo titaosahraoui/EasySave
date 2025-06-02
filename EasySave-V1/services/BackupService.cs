@@ -23,19 +23,31 @@ namespace BackupApp.Services
         private readonly PriorityFileQueue _priorityQueue = new();
         private readonly SemaphoreSlim _largeFileSemaphore = new(1, 1);
         private readonly BusinessSoftwareMonitor _softwareMonitor;
+        private readonly NetworkMonitor _networkMonitor;
+        private readonly RemoteConsoleService _remoteConsole;
         private int _maxParallelFileSizeKB = 1024; // Configurable
 
         public BackupService(BusinessSoftwareMonitor softwareMonitor, LogFormat logFormat = LogFormat.Json, CryptoConfig cryptoConfig = null)
         {
+            // Load config once at the start
+            var config = AppConfig.Load();
+
             _languageService = new LanguageService();
             _logger = logFormat == LogFormat.Json ? new FileLogger() : new XmlFileLogger();
             _stateManager = new FileStateManager();
-            _cryptoConfig = cryptoConfig ?? new CryptoConfig();
+            _networkMonitor = new NetworkMonitor();
+            _networkMonitor.NetworkSpeedUpdated += OnNetworkSpeedChanged;
+
+            _remoteConsole = new RemoteConsoleService(_stateManager, _logger);
+            _ = _remoteConsole.StartAsync();
+           
+            // Initialize encryption - use provided config or create new
+            _cryptoConfig = cryptoConfig ?? config.GetCryptoConfig();
             _cryptoService = new CryptoService(_logger, _cryptoConfig);
             _softwareMonitor = softwareMonitor;
 
-            var priorityExtensions = AppConfig.Load().PriorityExtensions;
-            _priorityQueue.SetPriorityExtensions(priorityExtensions);
+            // Set priority extensions once using the loaded config
+            _priorityQueue.SetPriorityExtensions(config.PriorityExtensions);
 
             _softwareMonitor.SoftwareRunningChanged += (isRunning) =>
             {
@@ -161,7 +173,11 @@ namespace BackupApp.Services
                 CurrentDestFile = string.Empty
             };
 
-            var files = GetFilesToBackup(job.SourcePath);
+            // Get files and sort by priority (priority files first)
+            var files = GetFilesToBackup(job.SourcePath)
+                .OrderByDescending(f => _priorityQueue.IsPriorityFile(f))
+                .ToArray();
+
             DateTime? lastBackupTime = job.Type == BackupType.Differential ? GetLastBackupTime(job.TargetPath) : null;
 
             // Create counters for thread-safe progress tracking
@@ -220,95 +236,193 @@ namespace BackupApp.Services
 
             try
             {
-                if (isLargeFile) await _largeFileSemaphore.WaitAsync(ct);
-                if (_priorityQueue.HasPriorityFiles() && !_priorityQueue.IsPriorityFile(file))
+                // Handle priority files
+                bool isPriority = _priorityQueue.IsPriorityFile(file);
+                if (isPriority)
                 {
-                    await _priorityQueue.WaitForPriorityFiles(ct);
+                    _priorityQueue.IncrementPriorityFiles();
                 }
+                else
+                {
+                    // Wait if there are any priority files pending
+                    await _priorityQueue.WaitForNonPriorityFilesAsync(ct);
+                }
+
+                // Handle large files
+                if (isLargeFile) await _largeFileSemaphore.WaitAsync(ct);
 
                 await task.WaitIfPaused(ct);
                 ct.ThrowIfCancellationRequested();
 
                 UpdateCurrentFileState(job, state, file, destFile);
                 await TransferFile(job, file, destFile, ct);
-
-                // Call the state update callback
                 updateState?.Invoke();
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogWarning(job.Name, $"Backup was cancelled during file transfer: {file}");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(job.Name, $"{_languageService.GetString("FileCopyError")} {file}: {ex.Message}");
             }
             finally
             {
                 if (isLargeFile) _largeFileSemaphore.Release();
+                if (_priorityQueue.IsPriorityFile(file))
+                {
+                    _priorityQueue.DecrementPriorityFiles();
+                }
             }
         }
 
         private async Task TransferFile(BackupJob job, string sourcePath, string destinationPath, CancellationToken cancellationToken)
         {
-            // Create directory if it doesn't exist
-            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+            // First copy the file normally
+            await CopyFileWithRetry(sourcePath, destinationPath, cancellationToken);
 
+            // Only check config.json setting for encryption (ignore job.EnableEncryption)
+            if (_cryptoConfig.IsEnabled && _cryptoService.ShouldEncryptFile(destinationPath, _cryptoConfig))
+            {
+                await EncryptWithFileHandling(job, destinationPath);
+            }
+        }
+
+        private async Task CopyFileWithRetry(string sourcePath, string destinationPath, CancellationToken ct, int retryCount = 3)
+        {
+            for (int i = 0; i < retryCount; i++)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+
+                    using (var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous))
+                    using (var destStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous))
+                    {
+                        await sourceStream.CopyToAsync(destStream, 81920, ct);
+                    }
+
+                    // Preserve timestamps
+                    var fileInfo = new FileInfo(sourcePath);
+                    File.SetLastWriteTime(destinationPath, fileInfo.LastWriteTime);
+                    File.SetCreationTime(destinationPath, fileInfo.CreationTime);
+
+                    return; // Success
+                }
+                catch (IOException) when (i < retryCount - 1)
+                {
+                    await Task.Delay(500 * (i + 1), ct); // Exponential backoff
+                }
+            }
+            throw new IOException($"Failed to copy file after {retryCount} attempts: {sourcePath}");
+        }
+
+        private async Task EncryptWithFileHandling(BackupJob job, string filePath)
+        {
+            string tempFile = Path.GetTempFileName();
             try
             {
-                using var sourceStream = new FileStream(
-                    sourcePath,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read,
-                    bufferSize: 81920,
-                    useAsync: true);
+                // 1. Make a working copy with retry logic
+                await CopyFileWithRetry(filePath, tempFile, CancellationToken.None);
 
-                using var destinationStream = new FileStream(
-                    destinationPath,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.None,
-                    bufferSize: 81920,
-                    useAsync: true);
-
-                await sourceStream.CopyToAsync(destinationStream, 81920, cancellationToken);
-
-                // Preserve original file timestamps
-                var fileInfo = new FileInfo(sourcePath);
-                File.SetLastWriteTime(destinationPath, fileInfo.LastWriteTime);
-                File.SetCreationTime(destinationPath, fileInfo.CreationTime);
-
-                // Encrypt file if needed
-                if (job.EnableEncryption && _cryptoService.ShouldEncryptFile(destinationPath, _cryptoConfig))
+                // 2. Verify the copy was successful
+                if (new FileInfo(tempFile).Length == 0)
                 {
-                    string encryptionKey = !string.IsNullOrEmpty(job.EncryptionKey)
-                        ? job.EncryptionKey
-                        : _cryptoConfig.EncryptionKey;
-                    Console.WriteLine("ENCRYPTION TRIGGERED");
-
-                    if (string.IsNullOrEmpty(encryptionKey))
-                    {
-                        throw new InvalidOperationException("No encryption key provided");
-                    }
-
-                    bool encryptionSuccess = await _cryptoService.EncryptFileAsync(destinationPath, encryptionKey);
-                    if (!encryptionSuccess)
-                    {
-                        throw new Exception($"Failed to encrypt file: {destinationPath}");
-                    }
+                    throw new Exception("Failed to create working copy - empty file");
                 }
+
+                // 3. Get the encryption key (use job-specific or default)
+                string key = !string.IsNullOrEmpty(job.EncryptionKey)
+                    ? job.EncryptionKey
+                    : _cryptoConfig.EncryptionKey;
+
+                if (string.IsNullOrEmpty(key))
+                {
+                    throw new Exception("No encryption key available");
+                }
+
+                // 4. Execute encryption with detailed logging
+                _logger.LogInfo(job.Name, $"Starting encryption for: {filePath}");
+
+                bool success = await _cryptoService.EncryptFileAsync(tempFile, key);
+                if (!success)
+                {
+                    throw new Exception("Encryption process returned failure");
+                }
+
+                // 5. Verify encrypted file is different from original
+                var originalBytes = await File.ReadAllBytesAsync(filePath);
+                var encryptedBytes = await File.ReadAllBytesAsync(tempFile);
+                if (originalBytes.SequenceEqual(encryptedBytes))
+                {
+                    throw new Exception("File unchanged after encryption");
+                }
+
+                // 6. Replace original with encrypted file
+                await SafeFileReplace(filePath, tempFile);
+
+                _logger.LogInfo(job.Name, $"Successfully encrypted: {filePath}");
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                // Clean up partially copied file
-                if (File.Exists(destinationPath))
-                {
-                    try { File.Delete(destinationPath); } catch { }
-                }
-                throw;
+                _logger.LogError(job.Name, $"Encryption failed for {filePath}: {ex.Message}");
+                throw new Exception($"Encryption failed: {ex.Message}");
             }
+            finally
+            {
+                SafeDelete(tempFile);
+            }
+        }
+
+        private void SafeDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to delete file {path}: {ex.Message}");
+            }
+        }
+
+        private async Task SafeFileReplace(string originalPath, string newPath)
+        {
+            string backupPath = originalPath + ".bak";
+            int retryCount = 3;
+
+            for (int i = 0; i < retryCount; i++)
+            {
+                try
+                {
+                    // Create backup
+                    if (File.Exists(originalPath))
+                        File.Replace(newPath, originalPath, backupPath);
+                    else
+                        File.Move(newPath, originalPath);
+
+                    // Clean up backup
+                    if (File.Exists(backupPath))
+                        File.Delete(backupPath);
+
+                    return;
+                }
+                catch (IOException) when (i < retryCount - 1)
+                {
+                    await Task.Delay(500 * (i + 1));
+                }
+            }
+            throw new IOException($"Failed to replace file after {retryCount} attempts: {originalPath}");
+        }
+
+        private void OnNetworkSpeedChanged(float downloadSpeed, float uploadSpeed)
+        {
+            // Adjust parallelism based on network conditions
+            int maxParallelism = CalculateOptimalParallelism(downloadSpeed);
+
+            // You could adjust _maxParallelFileSizeKB here too
+            Debug.WriteLine($"Network speed: {downloadSpeed} Mbps - Setting max parallelism to {maxParallelism}");
+        }
+
+        private int CalculateOptimalParallelism(float downloadSpeedMbps)
+        {
+            if (downloadSpeedMbps > 50) return Environment.ProcessorCount * 2;
+            if (downloadSpeedMbps > 20) return Environment.ProcessorCount;
+            if (downloadSpeedMbps > 5) return Math.Max(2, Environment.ProcessorCount / 2);
+            return 1; // Very slow connection
         }
 
         public void PauseBackup(int jobId)
@@ -365,6 +479,7 @@ namespace BackupApp.Services
             state.Status = success ? "Completed" : "Error";
             state.LastActionTimestamp = DateTime.Now;
             _stateManager.UpdateState(job.Name, state);
+
         }
 
         private long CalculateTotalSize(string[] files)
@@ -487,30 +602,41 @@ namespace BackupApp.Services
     public class PriorityFileQueue
     {
         private readonly HashSet<string> _priorityExtensions = new();
-        private readonly SemaphoreSlim _prioritySemaphore = new(0, 1);
+        private readonly SemaphoreSlim _priorityLock = new(1, 1);
+        private int _pendingPriorityFiles = 0;
 
         public void SetPriorityExtensions(IEnumerable<string> extensions)
         {
-            _priorityExtensions.Clear();
-            foreach (var ext in extensions)
+            lock (_priorityExtensions)
             {
-                _priorityExtensions.Add(ext.StartsWith(".") ? ext : $".{ext}");
+                _priorityExtensions.Clear();
+                foreach (var ext in extensions)
+                {
+                    _priorityExtensions.Add(ext.StartsWith(".") ? ext : $".{ext}");
+                }
             }
         }
 
-        public bool HasPriorityFiles() => _priorityExtensions.Count > 0;
-        public bool IsPriorityFile(string filePath) =>
-            _priorityExtensions.Contains(Path.GetExtension(filePath));
-
-        public async Task WaitForPriorityFiles(CancellationToken ct)
+        public bool IsPriorityFile(string filePath)
         {
-            while (HasPriorityFiles())
+            lock (_priorityExtensions)
+            {
+                return _priorityExtensions.Contains(Path.GetExtension(filePath).ToLowerInvariant());
+            }
+        }
+
+        public async Task WaitForNonPriorityFilesAsync(CancellationToken ct)
+        {
+            while (_pendingPriorityFiles > 0)
             {
                 await Task.Delay(100, ct);
+                ct.ThrowIfCancellationRequested();
             }
         }
-    }
 
+        public void IncrementPriorityFiles() => Interlocked.Increment(ref _pendingPriorityFiles);
+        public void DecrementPriorityFiles() => Interlocked.Decrement(ref _pendingPriorityFiles);
+    }
     public class BusinessSoftwareMonitor
     {
         private readonly HashSet<string> _businessProcessNames;

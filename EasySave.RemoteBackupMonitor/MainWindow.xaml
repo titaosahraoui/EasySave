@@ -1,0 +1,17 @@
+﻿<!-- MainWindow.xaml -->
+<Window x:Class="RemoteBackupMonitor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="EasySave Remote Monitor" Height="450" Width="800">
+    <Grid>
+        <DataGrid x:Name="BackupStatesGrid" AutoGenerateColumns="False" Margin="10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Backup Name" Binding="{Binding BackupName}"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}"/>
+                <DataGridTextColumn Header="Progress" Binding="{Binding ProgressPercentage}"/>
+                <DataGridTextColumn Header="Current File" Binding="{Binding CurrentSourceFile}"/>
+                <DataGridTextColumn Header="Files Processed" Binding="{Binding FilesProcessed}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

@@ -1,18 +1,21 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using BackupApp.Avalonia.Views;
 using BackupApp.ViewModels;
-using BackupApp.Views;
+
 
 namespace BackupApp.Avalonia.Views
 {
     public partial class BackupJobsView : UserControl
     {
+        private readonly BackupViewModel _viewModel;
+
         public BackupJobsView()
         {
             InitializeComponent();
-            DataContext = new BackupViewModel();
+            _viewModel = new BackupViewModel();
+            DataContext = _viewModel;
         }
 
         private void InitializeComponent()
@@ -25,14 +28,8 @@ namespace BackupApp.Avalonia.Views
             var parentWindow = TopLevel.GetTopLevel(this) as Window;
             if (parentWindow == null) return;
 
-            // Use the static ShowDialog method we created
-            var result = await AddEditBackupJobWindow.ShowDialog(parentWindow);
-
-            // If a job was created/edited, refresh the list
-            if (result != null && DataContext is BackupViewModel viewModel)
-            {
-                viewModel.RefreshBackupJobs();
-            }
+            var result = await AddEditBackupJobWindow.ShowDialog(parentWindow, _viewModel);
+            _viewModel.RefreshBackupJobs();
         }
     }
 }

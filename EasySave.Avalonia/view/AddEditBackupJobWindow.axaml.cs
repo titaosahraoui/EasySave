@@ -19,22 +19,18 @@ namespace BackupApp.Avalonia.Views
 #endif
         }
 
-        public static async Task<BackupJob?> ShowDialog(Window parent, BackupJob? existingJob = null)
+        public static async Task<BackupJob?> ShowDialog(Window parent, BackupViewModel backupViewModel, BackupJob? existingJob = null)
         {
             var window = new AddEditBackupJobWindow();
-
-            // Create and set the ViewModel
-            var viewModel = new AddEditBackupJobViewModel(window, existingJob);
+            var viewModel = new AddEditBackupJobViewModel(window, backupViewModel, existingJob);
             window.DataContext = viewModel;
 
-            // Handle alerts and errors
+            // Setup event handlers
             viewModel.AlertRequested += (sender, message) =>
                 ShowMessageBox(window, "Alert", message);
-
             viewModel.ErrorOccurred += (sender, ex) =>
                 ShowMessageBox(window, "Error", ex.Message);
 
-            // Show as dialog and return result
             return await window.ShowDialog<BackupJob?>(parent);
         }
 

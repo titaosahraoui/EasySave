@@ -51,6 +51,7 @@ namespace BackupApp.ViewModels
         public ICommand LoadJobsCommand { get; }
         public ICommand RunJobCommand { get; }
         public ICommand DeleteJobCommand { get; }
+        public ICommand RefreshJobsCommand { get; }
 
         public BackupViewModel()
         {
@@ -68,6 +69,11 @@ namespace BackupApp.ViewModels
             LoadJobsCommand = new RelayCommand(LoadJobs);
             RunJobCommand = new AsyncRelayCommand(RunSelectedJob);
             DeleteJobCommand = new RelayCommand(DeleteSelectedJob);
+            RefreshJobsCommand = new RelayCommand(() =>
+            {
+                LoadJobs();
+                OnPropertyChanged(nameof(Jobs)); // Explicitly notify UI of changes
+            });
 
             LoadJobs();
         }
@@ -84,17 +90,24 @@ namespace BackupApp.ViewModels
 
         public void RefreshBackupJobs()
         {
-            var jobs = _repository.GetAllBackupJobs();
-            Jobs.Clear();
-            foreach (var job in jobs)
+            ExecuteOnUI(() =>
             {
-                Jobs.Add(job);
-            }
-        }
+                var jobs = _repository.GetAllBackupJobs();
 
+                Jobs.Clear();
+                foreach (var job in jobs.OrderBy(j => j.Id))
+                {
+                    Jobs.Add(job);
+                }
+
+                // Notify property changes
+                OnPropertyChanged(nameof(Jobs));
+                OnPropertyChanged(nameof(SelectedJob));
+                OnPropertyChanged(nameof(SelectedJobs));
+            });
+        }
         internal async Task RunSelectedJob()
         {
-            // Determine which jobs to run
             var jobsToRun = SelectedJobs?.Count > 0 ? SelectedJobs :
                             SelectedJob != null ? new List<BackupJob> { SelectedJob } :
                             null;
@@ -115,17 +128,31 @@ namespace BackupApp.ViewModels
                     var tasks = new List<Task>();
                     int completedJobs = 0;
 
+                    // Load encryption settings once from config.json
+                    var currentConfig = AppConfig.Load();
+                    bool encryptionEnabled = currentConfig.Encryption.IsEnabled;
+                    string encryptionKey = currentConfig.Encryption.EncryptionKey;
+
                     foreach (var job in jobsToRun)
                     {
-                        var currentJob = job; // Capture for closure
+                        var currentJob = job;
                         currentJob.Status = "Active";
                         currentJob.Progress = 0;
                         currentJob.CurrentFile = string.Empty;
-                        OnPropertyChanged(nameof(SelectedJob));
+
+                        // Completely ignore job.EnableEncryption and only use config.json settings
+                        currentJob.EnableEncryption = encryptionEnabled;
+                        currentJob.EncryptionKey = encryptionKey;
+
+                        // Verify encryption settings
+                        if (currentJob.EnableEncryption && string.IsNullOrEmpty(encryptionKey))
+                        {
+                            ShowError("Encryption enabled in config but no encryption key configured");
+                            currentJob.EnableEncryption = false;
+                        }
 
                         var progress = new Progress<BackupProgressReport>(report =>
                         {
- 
                             currentJob.Progress = Math.Round(report.ProgressPercentage, 2);
                             currentJob.CurrentFile = report.CurrentFile;
                             OnPropertyChanged(nameof(SelectedJob));
@@ -139,21 +166,23 @@ namespace BackupApp.ViewModels
                         {
                             try
                             {
-                                await _backupService.PerformBackupAsync(currentJob, progress, cancellationTokenSource.Token);
+                                await _backupService.PerformBackupAsync(
+                                    currentJob,
+                                    progress,
+                                    cancellationTokenSource.Token
+                                );
+
                                 currentJob.Status = "Completed";
-                                Console.WriteLine("CONFIG LOADED:");
-                                Console.WriteLine($"  IsEnabled: {_config.Encryption.IsEnabled}");
-                                Console.WriteLine($"  Key: {_config.Encryption.EncryptionKey}");
-                                Console.WriteLine($"  Extensions: {string.Join(", ", _config.Encryption.FileExtensions)}");
                                 currentJob.LastRun = DateTime.Now;
                             }
                             catch (OperationCanceledException)
                             {
                                 currentJob.Status = "Cancelled";
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
                                 currentJob.Status = "Error";
+                                Console.WriteLine($"Backup error for job {currentJob.Name}: {ex}");
                             }
                             finally
                             {

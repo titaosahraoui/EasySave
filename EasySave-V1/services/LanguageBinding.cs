@@ -16,5 +16,11 @@ namespace BackupApp
         {
             return _languageService.GetString(key);
         }
+
+        // Add this method to change language
+        public void SetLanguage(string languageCode)
+        {
+            _languageService.SetLanguage(languageCode);
+        }
     }
 }
