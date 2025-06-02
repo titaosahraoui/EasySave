@@ -90,21 +90,22 @@ namespace BackupApp.ViewModels
 
         public void RefreshBackupJobs()
         {
-            var jobs = _repository.GetAllBackupJobs();
-
-            // Clear and add items in a way that properly notifies UI
-            Jobs.Clear();
-            foreach (var job in jobs)
+            ExecuteOnUI(() =>
             {
-                Jobs.Add(job);
-            }
+                var jobs = _repository.GetAllBackupJobs();
 
-            // Force property change notifications
-            OnPropertyChanged(nameof(Jobs));
-            OnPropertyChanged(nameof(SelectedJob));
-            OnPropertyChanged(nameof(SelectedJobs));
+                Jobs.Clear();
+                foreach (var job in jobs.OrderBy(j => j.Id))
+                {
+                    Jobs.Add(job);
+                }
+
+                // Notify property changes
+                OnPropertyChanged(nameof(Jobs));
+                OnPropertyChanged(nameof(SelectedJob));
+                OnPropertyChanged(nameof(SelectedJobs));
+            });
         }
-
         internal async Task RunSelectedJob()
         {
             var jobsToRun = SelectedJobs?.Count > 0 ? SelectedJobs :

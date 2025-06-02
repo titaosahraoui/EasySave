@@ -141,6 +141,45 @@
     <value>Backup job created successfully</value>
   </data>
 
+    <!-- ... other existing resources ... -->
+    <data name="MainWindow_Title" xml:space="preserve">
+    <value>EasySave Backup Manager</value>
+    </data>
+    <data name="MainHeader" xml:space="preserve">
+    <value>EasySave Backup Manager</value>
+    </data>
+    <data name="Navigation_Header" xml:space="preserve">
+    <value>Navigation</value>
+    </data>
+    <data name="Dashboard_Button" xml:space="preserve">
+    <value>Dashboard</value>
+    </data>
+    <data name="BackupJobs_Button" xml:space="preserve">
+    <value>Backup Jobs</value>
+    </data>
+    <data name="Settings_Button" xml:space="preserve">
+    <value>Settings</value>
+    </data>
+    <data name="Logs_Button" xml:space="preserve">
+    <value>Logs</value>
+    </data>
+    <data name="QuickActions_Header" xml:space="preserve">
+    <value>Quick Actions</value>
+    </data>
+    <data name="RunAll_Button" xml:space="preserve">
+    <value>Run All Jobs</value>
+    </data>
+    <data name="PauseAll_Button" xml:space="preserve">
+    <value>Pause All</value>
+    </data>
+    <data name="ResumeAll_Button" xml:space="preserve">
+    <value>Resume All</value>
+    </data>
+    <data name="StopAll_Button" xml:space="preserve">
+    <value>Stop All</value>
+    </data>
+
+
     <!-- Edit/Delete Dialogs -->
     <data name="EditBackupJobTitle" xml:space="preserve">
     <value>Edit Backup Job</value>
@@ -217,6 +256,104 @@
     <data name="LanguageChanged" xml:space="preserve">
     <value>Language changed successfully</value>
   </data>
+
+    <!-- Add these to your .resx file if they don't exist -->
+    <data name="ApplicationTitle" xml:space="preserve">
+    <value>EasySave Backup Manager</value>
+</data>
+    <data name="EasySave Backup Manager" xml:space="preserve">
+    <value>EasySave Backup Manager</value>
+</data>
+    <data name="Navigation" xml:space="preserve">
+    <value>Navigation</value>
+</data>
+  
+    <data name="BackupJobs" xml:space="preserve">
+    <value>Backup Jobs</value>
+</data>
+    <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+</data>
+    <data name="Logs" xml:space="preserve">
+    <value>Logs</value>
+</data>
+    <data name="QuickActions" xml:space="preserve">
+    <value>Quick Actions</value>
+</data>
+    <data name="RunAllJobs" xml:space="preserve">
+    <value>Run All Jobs</value>
+</data>
+    <data name="PauseAll" xml:space="preserve">
+    <value>Pause All</value>
+</data>
+    <data name="ResumeAll" xml:space="preserve">
+    <value>Resume All</value>
+</data>
+    <data name="StopAll" xml:space="preserve">
+    <value>Stop All</value>
+</data>
+    <!-- Confirmation & Alerts -->
+    <data name="ConfirmDelete" xml:space="preserve">
+    <value>Are you sure you want to delete this job?</value>
+    </data>
+    <data name="ConfirmExit" xml:space="preserve">
+    <value>Are you sure you want to exit?</value>
+    </data>
+    <data name="ActionCancelled" xml:space="preserve">
+    <value>Action cancelled</value>
+    </data>
+    <data name="ErrorOccurred" xml:space="preserve">
+    <value>An error has occurred</value>
+    </data>
+    <data name="TryAgain" xml:space="preserve">
+    <value>Please try again</value>
+    </data>
+    <data name="OperationSuccess" xml:space="preserve">
+    <value>Operation completed successfully</value>
+    </data>
+    <data name="MissingFields" xml:space="preserve">
+    <value>Please fill out all required fields</value>
+    </data>
+
+    <!-- Settings -->
+    <data name="SettingsTitle" xml:space="preserve">
+    <value>Settings</value>
+    </data>
+    <data name="LanguageLabel" xml:space="preserve">
+    <value>Select Language</value>
+    </data>
+    <data name="SaveSettings" xml:space="preserve">
+    <value>Save Settings</value>
+    </data>
+    <data name="SettingsSaved" xml:space="preserve">
+    <value>Settings have been saved</value>
+    </data>
+
+    <!-- Logs -->
+    <data name="LogsTitle" xml:space="preserve">
+    <value>Backup Logs</value>
+    </data>
+    <data name="NoLogsFound" xml:space="preserve">
+    <value>No logs found</value>
+    </data>
+    <data name="JobStatus" xml:space="preserve">
+    <value>Status</value>
+    </data>
+    <data name="StartTime" xml:space="preserve">
+    <value>Start Time</value>
+    </data>
+    <data name="EndTime" xml:space="preserve">
+    <value>End Time</value>
+    </data>
+    <data name="Duration" xml:space="preserve">
+    <value>Duration</value>
+    </data>
+    <data name="FileCount" xml:space="preserve">
+    <value>Files Processed</value>
+    </data>
+    <data name="TotalSize" xml:space="preserve">
+    <value>Total Size</value>
+    </data>
 
     <!-- Backup Operations -->
     <data name="StartingBackup" xml:space="preserve">

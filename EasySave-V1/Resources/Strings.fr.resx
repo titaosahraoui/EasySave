@@ -112,6 +112,45 @@
     <value>Préférence linguistique enregistrée</value>
 </data>
 
+	    <!-- ... other existing resources ... -->
+	    <data name="MainWindow_Title" xml:space="preserve">
+        <value>Gestionnaire de sauvegarde EasySave</value>
+    </data>
+	    <data name="MainHeader" xml:space="preserve">
+        <value>Gestionnaire de sauvegarde EasySave</value>
+    </data>
+	    <data name="Navigation_Header" xml:space="preserve">
+        <value>Navigation</value>
+    </data>
+	    <data name="Dashboard_Button" xml:space="preserve">
+        <value>Tableau de bord</value>
+    </data>
+	    <data name="BackupJobs_Button" xml:space="preserve">
+        <value>Jobs de sauvegarde</value>
+    </data>
+	    <data name="Settings_Button" xml:space="preserve">
+        <value>Paramètres</value>
+    </data>
+	    <data name="Logs_Button" xml:space="preserve">
+        <value>Journaux</value>
+    </data>
+	    <data name="QuickActions_Header" xml:space="preserve">
+        <value>Actions rapides</value>
+    </data>
+	    <data name="RunAll_Button" xml:space="preserve">
+        <value>Exécuter tous</value>
+    </data>
+	    <data name="PauseAll_Button" xml:space="preserve">
+        <value>Suspendre tous</value>
+    </data>
+	    <data name="ResumeAll_Button" xml:space="preserve">
+        <value>Reprendre tous</value>
+    </data>
+	    <data name="StopAll_Button" xml:space="preserve">
+        <value>Arrêter tous</value>
+    </data>
+
+
     <!-- Backup Job Management -->
     <data name="CreateBackupJobTitle" xml:space="preserve">
     <value>Créer un nouveau travail de sauvegarde</value>

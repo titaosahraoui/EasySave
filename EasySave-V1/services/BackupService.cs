@@ -479,6 +479,7 @@ namespace BackupApp.Services
             state.Status = success ? "Completed" : "Error";
             state.LastActionTimestamp = DateTime.Now;
             _stateManager.UpdateState(job.Name, state);
+
         }
 
         private long CalculateTotalSize(string[] files)

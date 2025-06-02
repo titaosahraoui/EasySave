@@ -39,8 +39,16 @@ namespace BackupApp.ViewModels
         public string SelectedLanguage
         {
             get => _selectedLanguage;
-            set => SetProperty(ref _selectedLanguage, value);
+            set
+            {
+                if (SetProperty(ref _selectedLanguage, value))
+                {
+                    // Notify the application that language has changed
+                    OnLanguageChanged?.Invoke(this, value);
+                }
+            }
         }
+        public event EventHandler<string> OnLanguageChanged;
 
         public string NewPriorityExtension
         {
